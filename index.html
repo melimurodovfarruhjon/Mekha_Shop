@@ -6,34 +6,34 @@
     <title>Mekha Shop — Закупки и Учет</title>
 
     <!-- Иконка для вкладки в браузере (ПК и Android) -->
-    <link rel="icon" type="image/png" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="./apple-touch-icon.png" />
 
     <!-- Иконка и PWA-настройки для iOS (iPhone) -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Mekha Shop" />
 
     <!-- Манифест приложения -->
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="./manifest.json" />
 
     <script type="text/javascript">
-  // Обработка перенаправления от 404.html
-  (function(l) {
-    if (l.search[1] === '/' ) {
-      var decoded = l.search.slice(1).split('&').map(function(s) { 
-        return s.replace(/~and~/g, '&')
-      }).join('?');
-      window.history.replaceState(null, null,
-          l.pathname.slice(0, -1) + decoded + l.hash
-      );
-    }
-  }(window.location))
-</script>
+      // Обработка перенаправления от 404.html
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
 
   </head>
   <body class="bg-[#FAF8F5] text-gray-900 antialiased select-none">
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>
