@@ -375,6 +375,26 @@ useEffect(() => {
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [currentPhotoPreview, setCurrentPhotoPreview] = useState(null);
 
+  
+  // ФОРМА НОВОЙ ЗАКУПОЧНОЙ ПАРТИИ
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchNotes, setBatchNotes] = useState('');
+  const [batchItems, setBatchItems] = useState([]);
+  const [batchSaving, setBatchSaving] = useState(false);
+
+  const createEmptyBatchItem = () => ({
+    productId: '',
+    quantity: '1',
+    wholesaleAmount: '',
+    wholesaleCurrency: 'CNY',
+    cargoAmount: '',
+    cargoCurrency: 'USD',
+    salePriceTjs: '',
+    variants: [
+      { color: 'Без цвета', size: 'Без размера', quantity: '1' }
+    ]
+  });
+
   const fetchRates = async () => {
     setLoading(true);
     try {
@@ -541,6 +561,133 @@ const handleSendOrder = async (e) => {
 };
 
 
+  const handleSavePurchaseBatch = async (e) => {
+    e.preventDefault();
+
+    if (batchSaving) return;
+
+    if (batchItems.length === 0) {
+      setModalAlert({
+        title: 'Ошибка',
+        message: 'Добавьте хотя бы одну модель.',
+        type: 'error'
+      });
+      return;
+    }
+
+    const payloadItems = [];
+
+    for (const item of batchItems) {
+      const product = products.find(
+        p => String(p.id) === String(item.productId)
+      );
+
+      if (!product) {
+        setModalAlert({
+          title: 'Ошибка',
+          message: 'Выберите существующую модель из каталога.',
+          type: 'error'
+        });
+        return;
+      }
+
+      const quantity = Number(item.quantity);
+      const variantsTotal = item.variants.reduce(
+        (sum, variant) => sum + Number(variant.quantity || 0),
+        0
+      );
+
+      if (
+        !Number.isInteger(quantity) ||
+        quantity <= 0 ||
+        variantsTotal !== quantity
+      ) {
+        setModalAlert({
+          title: 'Проверьте количество',
+          message: `Количество вариантов модели «${product.title}» должно совпадать с общим количеством.`,
+          type: 'error'
+        });
+        return;
+      }
+
+      if (
+        !item.wholesaleAmount ||
+        !item.cargoAmount ||
+        item.salePriceTjs === '' ||
+        Number(item.salePriceTjs) < 0
+      ) {
+        setModalAlert({
+          title: 'Заполните стоимость',
+          message: `Проверьте закупку, карго и цену продажи модели «${product.title}».`,
+          type: 'error'
+        });
+        return;
+      }
+
+      payloadItems.push({
+        legacyId: String(product.id),
+        title: product.title,
+        photo: null,
+        quantity,
+        wholesaleAmount: Number(item.wholesaleAmount),
+        wholesaleCurrency: item.wholesaleCurrency,
+        wholesaleRateToTjs: getCurrencyRateToTJS(item.wholesaleCurrency),
+        cargoAmount: Number(item.cargoAmount),
+        cargoCurrency: item.cargoCurrency,
+        cargoRateToTjs: getCurrencyRateToTJS(item.cargoCurrency),
+        salePriceTjs: Number(item.salePriceTjs),
+        variants: item.variants.map(variant => ({
+          color: variant.color,
+          size: variant.size,
+          quantity: Number(variant.quantity)
+        }))
+      });
+    }
+
+    setBatchSaving(true);
+
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/api/purchase-batches`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            notes: batchNotes,
+            items: payloadItems
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Не удалось сохранить партию');
+      }
+
+      setBatchItems([]);
+      setBatchNotes('');
+      setIsBatchModalOpen(false);
+
+      setModalAlert({
+        title: 'Партия сохранена',
+        message: `Закупочная партия №${data.batchNumber} успешно зарегистрирована. Себестоимость рассчитана сервером.`,
+        type: 'success'
+      });
+
+    } catch (error) {
+      setModalAlert({
+        title: 'Ошибка сохранения',
+        message: error.message || 'Не удалось связаться с сервером.',
+        type: 'error'
+      });
+    } finally {
+      setBatchSaving(false);
+    }
+  };
+  
   const handleSubmitProduct = (e) => {
     e.preventDefault();
     if (!prodTitle) return;
@@ -630,6 +777,32 @@ const handleSendOrder = async (e) => {
     let cargoUSD = p.cargoCost;
     if (p.cargoCurrency === 'CNY') cargoUSD = p.cargoCost * rates.CNY_USD;
     if (p.cargoCurrency === 'TJS') cargoUSD = p.cargoCost / rates.USD_TJS;
+
+    
+  const getCurrencyRateToTJS = (currency) => {
+    if (currency === 'TJS') return 1;
+    if (currency === 'USD') return Number(rates.USD_TJS);
+    if (currency === 'CNY') {
+      return Number(rates.CNY_USD) * Number(rates.USD_TJS);
+    }
+    return 0;
+  };
+
+  const calculateBatchItemCost = (item) => {
+    const wholesale = Number(item.wholesaleAmount) || 0;
+    const cargo = Number(item.cargoAmount) || 0;
+    const quantity = Number(item.quantity) || 0;
+
+    if (quantity <= 0) return 0;
+
+    const wholesaleTJS =
+      wholesale * getCurrencyRateToTJS(item.wholesaleCurrency);
+
+    const cargoTJS =
+      cargo * getCurrencyRateToTJS(item.cargoCurrency);
+
+    return (wholesaleTJS + cargoTJS) / quantity;
+  };
 
     const totalUSD = wholesaleUSD + cargoUSD;
     return ((totalUSD / (p.quantity || 1)) * rates.USD_TJS).toFixed(0);
