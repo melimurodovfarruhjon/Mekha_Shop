@@ -813,69 +813,123 @@ const handleSendOrder = async (e) => {
               )}
             </div>
 
-            <div className={`rounded-2xl border shadow-sm overflow-hidden ${
-              isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
-            }`}>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-[11px]">
-                  <thead>
-                    <tr className={`${isDarkMode ? 'bg-[#2A2A2A] text-rose-300' : 'bg-rose-50/70 text-[#58111A]'} border-b border-rose-100 font-bold`}>
-                      <th className="p-2.5">Фото</th>
-                      <th className="p-2.5">Модель</th>
-                      <th className="p-2.5 text-center">Кол-во</th>
-                      <th className="p-2.5">Опт</th>
-                      <th className="p-2.5">Карго</th>
-                      <th className="p-2.5">1 шт (TJS)</th>
-                      <th className="p-2.5 text-center">Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-100'}`}>
-                    {filteredProducts.map(p => {
-                      const costPerItemTJS = calcSingleItemTJS(p);
-
-                      return (
-                        <tr key={p.id} className={`${isDarkMode ? 'hover:bg-[#252525]' : 'hover:bg-gray-50/50'} ${editingId === p.id ? (isDarkMode ? 'bg-rose-950/40' : 'bg-rose-50/40') : ''}`}>
-                          <td className="p-2 cursor-pointer" onClick={() => setSelectedProductDetails(p)}>
-                            <div className="relative group">
-                              <img src={p.photo} alt={p.title} className="w-10 h-10 object-cover rounded-lg border border-gray-200 transition-transform active:scale-95" />
-                              <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center text-white">
-                                <Eye size={12} />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-2 font-medium leading-tight cursor-pointer" onClick={() => setSelectedProductDetails(p)}>
-                            {p.title}
-                          </td>
-                          <td className={`p-2 text-center font-bold ${isDarkMode ? 'bg-[#252525] text-gray-300' : 'bg-gray-50/50 text-gray-700'}`}>
-                            {p.quantity} шт
-                          </td>
-                          <td className="p-2 whitespace-nowrap">
-                            {formatCurrencyValue(p.totalWholesale, p.wholesaleCurrency)}
-                          </td>
-                          <td className="p-2 whitespace-nowrap font-medium">
-                            {formatCurrencyValue(p.cargoCost, p.cargoCurrency)}
-                          </td>
-                          <td className="p-2 font-bold text-rose-500 whitespace-nowrap">
-                            {costPerItemTJS} TJS
-                          </td>
-                          <td className="p-2 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button onClick={() => handleStartEdit(p)} title="Редактировать" className="text-gray-400 hover:text-rose-400">
+            
+              <div className="space-y-2">
+                {filteredProducts.length === 0 ? (
+                  <div className={`rounded-2xl border p-6 text-center text-xs ${
+                    isDarkMode
+                      ? 'bg-[#1E1E1E] border-gray-800 text-gray-400'
+                      : 'bg-white border-rose-100 text-gray-400'
+                  }`}>
+                    Товары не найдены
+                  </div>
+                ) : (
+                  filteredProducts.map(p => {
+                    const costPerItemTJS = calcSingleItemTJS(p);
+              
+                    return (
+                      <article
+                        key={p.id}
+                        className={`flex h-[76px] overflow-hidden rounded-2xl border shadow-sm ${
+                          isDarkMode
+                            ? 'bg-[#1E1E1E] border-gray-800'
+                            : 'bg-white border-rose-100'
+                        } ${
+                          editingId === p.id
+                            ? 'ring-1 ring-rose-400'
+                            : ''
+                        }`}
+                      >
+                        {/* Фото — 28% ширины */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProductDetails(p)}
+                          className="w-[28%] max-w-[96px] min-w-[76px] h-full shrink-0 overflow-hidden bg-gray-100"
+                        >
+                          <img
+                            src={p.photo}
+                            alt={p.title}
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+              
+                        {/* Информация */}
+                        <div className="min-w-0 flex-1 px-2.5 py-1.5 flex flex-col justify-between">
+              
+                          {/* Название и действия */}
+                          <div className="flex items-center justify-between gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedProductDetails(p)}
+                              className={`min-w-0 truncate text-left text-[11px] font-bold ${
+                                isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                              }`}
+                            >
+                              {p.title}
+                            </button>
+              
+                            <div className="flex shrink-0 items-center gap-2">
+                              <button
+                                onClick={() => handleStartEdit(p)}
+                                aria-label="Редактировать"
+                                className="p-1 text-gray-400 hover:text-rose-500"
+                              >
                                 <Edit3 size={13} />
                               </button>
-                              
-                              <button onClick={() => setProductToDelete(p)} title="Удалить" className="text-gray-400 hover:text-red-500">
+              
+                              <button
+                                onClick={() => setProductToDelete(p)}
+                                aria-label="Удалить"
+                                className="p-1 text-gray-400 hover:text-red-500"
+                              >
                                 <Trash2 size={13} />
                               </button>
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                          </div>
+              
+                          {/* Закупка и карго */}
+                          <div className="grid grid-cols-2 gap-1 text-[9px] leading-tight">
+                            <div className="min-w-0">
+                              <span className="block text-gray-400">Опт</span>
+                              <span className="block truncate font-semibold">
+                                {formatCurrencyValue(p.totalWholesale, p.wholesaleCurrency)}
+                              </span>
+                            </div>
+              
+                            <div className="min-w-0">
+                              <span className="block text-gray-400">Карго</span>
+                              <span className="block truncate font-semibold">
+                                {formatCurrencyValue(p.cargoCost, p.cargoCurrency)}
+                              </span>
+                            </div>
+                          </div>
+              
+                          {/* Остаток и себестоимость */}
+                          <div className="flex items-end justify-between gap-1">
+                            <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-semibold ${
+                              isDarkMode
+                                ? 'bg-[#303030] text-gray-300'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              Остаток: {p.quantity} шт
+                            </span>
+              
+                            <div className="min-w-0 text-right leading-none">
+                              <span className="block text-[8px] text-gray-400">
+                                Себестоимость / шт.
+                              </span>
+                              <span className="block truncate pt-0.5 text-[11px] font-extrabold text-rose-500">
+                                {costPerItemTJS} TJS
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })
+                )}
               </div>
-            </div>
+
 
           </div>
         )}
