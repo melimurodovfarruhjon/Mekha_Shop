@@ -62,7 +62,18 @@ const ImageUploader = ({ onImageUpload, currentPreview, isDarkMode }) => {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(() => {
+  const savedTab = localStorage.getItem('mekha_active_tab');
+
+  const allowedTabs = ['home', 'products', 'calc', 'courier'];
+
+  return allowedTabs.includes(savedTab) ? savedTab : 'home';
+});
+  
+  useEffect(() => {
+  localStorage.setItem('mekha_active_tab', activeTab);
+}, [activeTab]);
+  
   const [rates, setRates] = useState({ 
     CNY_USD: 0.14, 
     USD_TJS: 10.9, 
