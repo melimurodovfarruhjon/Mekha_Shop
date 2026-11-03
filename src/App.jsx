@@ -380,11 +380,10 @@ const handleSendOrder = async (e) => {
         clientAddress,
         comment: deliveryComment,
         items: deliveryItems.map(item => ({
-          productId: item.productId || null,
-          title: item.title,
-          qty: Number(item.qty),
-          photo: item.photo || null
-        }))
+         productId: item.productId || null,
+         title: item.title,
+         qty: Number(item.qty)
+    }))
       })
     });
 
