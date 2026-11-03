@@ -1878,6 +1878,388 @@ const removeBatchModel = (itemIndex) => {
         </div>
       )}
 
+      {/* МОДАЛЬНОЕ ОКНО ЗАКУПОЧНОЙ ПАРТИИ */}
+      {isBatchModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+          <div className={`w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-5 shadow-2xl space-y-5 ${
+            isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
+          }`}>
+
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-bold">Новая закупочная партия</h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  Добавьте модели и укажите расходы по каждой из них
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsBatchModalOpen(false)}
+                className="text-gray-400 text-xl px-2"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePurchaseBatch} className="space-y-5">
+
+              {batchItems.map((item, itemIndex) => {
+                const selectedProduct = products.find(
+                  p => String(p.id) === String(item.productId)
+                );
+
+                const variantsTotal = item.variants.reduce(
+                  (sum, variant) => sum + (Number(variant.quantity) || 0),
+                  0
+                );
+
+                const availableProducts = products.filter(p =>
+                  !batchItems.some((other, otherIndex) =>
+                    otherIndex !== itemIndex &&
+                    String(other.productId) === String(p.id)
+                  )
+                );
+
+                const inputClass = `w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8B2635] ${
+                  isDarkMode
+                    ? 'bg-[#2A2A2A] border-gray-700 text-white'
+                    : 'bg-white border-gray-200 text-gray-900'
+                }`;
+
+                return (
+                  <div
+                    key={itemIndex}
+                    className={`rounded-2xl border p-4 space-y-4 ${
+                      isDarkMode ? 'border-gray-700 bg-[#252525]' : 'border-rose-100 bg-rose-50/30'
+                    }`}
+                  >
+
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-bold text-sm">
+                        Модель №{itemIndex + 1}
+                      </h3>
+
+                      {batchItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeBatchModel(itemIndex)}
+                          className="text-red-500 text-xs font-semibold"
+                        >
+                          Удалить модель
+                        </button>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold block mb-1.5">
+                        Выберите модель из каталога
+                      </label>
+
+                      <select
+                        required
+                        value={item.productId}
+                        onChange={e =>
+                          updateBatchItem(itemIndex, 'productId', e.target.value)
+                        }
+                        className={inputClass}
+                      >
+                        <option value="">Выберите модель</option>
+
+                        {availableProducts.map(product => (
+                          <option key={product.id} value={product.id}>
+                            {product.title}
+                          </option>
+                        ))}
+                      </select>
+
+                      {products.length === 0 && (
+                        <p className="text-xs text-red-500 mt-1">
+                          Сначала добавьте модель в каталог.
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold block mb-1.5">
+                        Общее количество единиц
+                      </label>
+
+                      <input
+                        required
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={item.quantity}
+                        onChange={e =>
+                          updateBatchItem(itemIndex, 'quantity', e.target.value)
+                        }
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                      <div>
+                        <label className="text-xs font-semibold block mb-1.5">
+                          Общая закупочная стоимость
+                        </label>
+
+                        <input
+                          required
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Например, 500"
+                          value={item.wholesaleAmount}
+                          onChange={e =>
+                            updateBatchItem(itemIndex, 'wholesaleAmount', e.target.value)
+                          }
+                          className={inputClass}
+                        />
+
+                        <select
+                          value={item.wholesaleCurrency}
+                          onChange={e =>
+                            updateBatchItem(itemIndex, 'wholesaleCurrency', e.target.value)
+                          }
+                          className={`${inputClass} mt-2`}
+                        >
+                          <option value="CNY">CNY — Юань</option>
+                          <option value="USD">USD — Доллар</option>
+                          <option value="TJS">TJS — Сомони</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold block mb-1.5">
+                          Общее карго этой модели
+                        </label>
+
+                        <input
+                          required
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Например, 20"
+                          value={item.cargoAmount}
+                          onChange={e =>
+                            updateBatchItem(itemIndex, 'cargoAmount', e.target.value)
+                          }
+                          className={inputClass}
+                        />
+
+                        <select
+                          value={item.cargoCurrency}
+                          onChange={e =>
+                            updateBatchItem(itemIndex, 'cargoCurrency', e.target.value)
+                          }
+                          className={`${inputClass} mt-2`}
+                        >
+                          <option value="USD">USD — Доллар</option>
+                          <option value="CNY">CNY — Юань</option>
+                          <option value="TJS">TJS — Сомони</option>
+                        </select>
+                      </div>
+
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold block mb-1.5">
+                        Цена продажи за одну единицу (TJS)
+                      </label>
+
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Например, 150"
+                        value={item.salePriceTjs}
+                        onChange={e =>
+                          updateBatchItem(itemIndex, 'salePriceTjs', e.target.value)
+                        }
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className={`rounded-xl p-3 ${
+                      isDarkMode ? 'bg-[#1A1A1A]' : 'bg-white'
+                    }`}>
+                      <p className="text-xs text-gray-400">
+                        Предварительная себестоимость одной единицы
+                      </p>
+
+                      <p className="text-xl font-bold text-[#8B2635] mt-1">
+                        {calculateBatchItemCost(item).toFixed(2)} TJS
+                      </p>
+
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        Расчёт по текущим курсам. Итоговую стоимость фиксирует сервер.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-gray-500/20 pt-4 space-y-3">
+
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-bold text-sm">
+                          Цвета и размеры
+                        </h4>
+
+                        <span className={`text-xs ${
+                          variantsTotal === Number(item.quantity)
+                            ? 'text-green-500'
+                            : 'text-orange-500'
+                        }`}>
+                          {variantsTotal} / {item.quantity || 0} шт.
+                        </span>
+                      </div>
+
+                      {item.variants.map((variant, variantIndex) => (
+                        <div
+                          key={variantIndex}
+                          className={`rounded-xl p-3 space-y-2 ${
+                            isDarkMode ? 'bg-[#303030]' : 'bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-semibold">
+                              Вариант №{variantIndex + 1}
+                            </span>
+
+                            {item.variants.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removeBatchVariant(itemIndex, variantIndex)
+                                }
+                                className="text-red-500 text-xs"
+                              >
+                                Удалить
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+
+                            <input
+                              required
+                              type="text"
+                              placeholder="Цвет"
+                              value={variant.color}
+                              onChange={e =>
+                                updateBatchVariant(
+                                  itemIndex,
+                                  variantIndex,
+                                  'color',
+                                  e.target.value
+                                )
+                              }
+                              className={inputClass}
+                            />
+
+                            <input
+                              required
+                              type="text"
+                              placeholder="Размер"
+                              value={variant.size}
+                              onChange={e =>
+                                updateBatchVariant(
+                                  itemIndex,
+                                  variantIndex,
+                                  'size',
+                                  e.target.value
+                                )
+                              }
+                              className={inputClass}
+                            />
+
+                            <input
+                              required
+                              type="number"
+                              min="0"
+                              step="1"
+                              placeholder="Количество"
+                              value={variant.quantity}
+                              onChange={e =>
+                                updateBatchVariant(
+                                  itemIndex,
+                                  variantIndex,
+                                  'quantity',
+                                  e.target.value
+                                )
+                              }
+                              className={inputClass}
+                            />
+
+                          </div>
+                        </div>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={() => addBatchVariant(itemIndex)}
+                        className="w-full border border-dashed border-[#8B2635] text-[#8B2635] py-2.5 rounded-xl text-xs font-bold"
+                      >
+                        + Добавить цвет или размер
+                      </button>
+
+                      {variantsTotal !== Number(item.quantity) && (
+                        <p className="text-xs text-orange-500">
+                          Сумма количеств всех вариантов должна совпадать с общим количеством модели.
+                        </p>
+                      )}
+
+                    </div>
+                  </div>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={addBatchModel}
+                className="w-full border border-dashed border-[#8B2635] text-[#8B2635] py-3 rounded-xl text-xs font-bold"
+              >
+                + Добавить ещё одну модель в партию
+              </button>
+
+              <div>
+                <label className="text-xs font-semibold block mb-1.5">
+                  Примечание к партии (необязательно)
+                </label>
+
+                <textarea
+                  value={batchNotes}
+                  onChange={e => setBatchNotes(e.target.value)}
+                  maxLength={1000}
+                  rows={3}
+                  placeholder="Например: закупка у поставщика..."
+                  className={inputClass}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={batchSaving || batchItems.length === 0}
+                className="w-full bg-[#58111A] text-white py-3.5 rounded-xl text-sm font-bold disabled:opacity-50"
+              >
+                {batchSaving ? 'Сохранение партии...' : 'Сохранить закупочную партию'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsBatchModalOpen(false)}
+                disabled={batchSaving}
+                className="w-full py-2 text-xs text-gray-400 font-semibold"
+              >
+                Отмена
+              </button>
+
+            </form>
+          </div>
+        </div>
+      )}
+      
       {/* МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ */}
       {productToDelete && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
