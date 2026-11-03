@@ -868,22 +868,40 @@ const removeBatchModel = (itemIndex) => {
     return `${sym}${val}`;
   };
 
-  const calcSingleItemTJS = (p) => {
+    const calcSingleItemTJS = (p) => {
     let wholesaleUSD = p.totalWholesale;
-    if (p.wholesaleCurrency === 'CNY') wholesaleUSD = p.totalWholesale * rates.CNY_USD;
-    if (p.wholesaleCurrency === 'TJS') wholesaleUSD = p.totalWholesale / rates.USD_TJS;
+
+    if (p.wholesaleCurrency === 'CNY') {
+      wholesaleUSD = p.totalWholesale * rates.CNY_USD;
+    }
+
+    if (p.wholesaleCurrency === 'TJS') {
+      wholesaleUSD = p.totalWholesale / rates.USD_TJS;
+    }
 
     let cargoUSD = p.cargoCost;
-    if (p.cargoCurrency === 'CNY') cargoUSD = p.cargoCost * rates.CNY_USD;
-    if (p.cargoCurrency === 'TJS') cargoUSD = p.cargoCost / rates.USD_TJS;
 
-    
+    if (p.cargoCurrency === 'CNY') {
+      cargoUSD = p.cargoCost * rates.CNY_USD;
+    }
+
+    if (p.cargoCurrency === 'TJS') {
+      cargoUSD = p.cargoCost / rates.USD_TJS;
+    }
+
+    const totalUSD = wholesaleUSD + cargoUSD;
+
+    return ((totalUSD / (p.quantity || 1)) * rates.USD_TJS).toFixed(0);
+  };
+
   const getCurrencyRateToTJS = (currency) => {
     if (currency === 'TJS') return 1;
     if (currency === 'USD') return Number(rates.USD_TJS);
+
     if (currency === 'CNY') {
       return Number(rates.CNY_USD) * Number(rates.USD_TJS);
     }
+
     return 0;
   };
 
@@ -902,11 +920,7 @@ const removeBatchModel = (itemIndex) => {
 
     return (wholesaleTJS + cargoTJS) / quantity;
   };
-
-    const totalUSD = wholesaleUSD + cargoUSD;
-    return ((totalUSD / (p.quantity || 1)) * rates.USD_TJS).toFixed(0);
-  };
-
+  
   const filteredProducts = products.filter(p => 
     p.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
