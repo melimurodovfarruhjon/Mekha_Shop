@@ -694,35 +694,30 @@ const removeBatchModel = (itemIndex) => {
       }
 
       const wholesaleAmount = Number(item.wholesaleAmount);
-const cargoAmount = Number(item.cargoAmount);
-const salePrice = Number(item.salePriceTjs);
+      const cargoAmount = Number(item.cargoAmount);
+      const salePrice = Number(item.salePriceTjs);
 
-const wholesaleRate = getCurrencyRateToTJS(item.wholesaleCurrency);
-const cargoRate = getCurrencyRateToTJS(item.cargoCurrency);
+      const wholesaleRate = getCurrencyRateToTJS(item.wholesaleCurrency);
+      const cargoRate = getCurrencyRateToTJS(item.cargoCurrency);
 
-if (
-  item.wholesaleAmount === '' ||
-  item.cargoAmount === '' ||
-  item.salePriceTjs === '' ||
-  !Number.isFinite(wholesaleAmount) ||
-  !Number.isFinite(cargoAmount) ||
-  !Number.isFinite(salePrice) ||
-  wholesaleAmount < 0 ||
-  cargoAmount < 0 ||
-  salePrice < 0 ||
-  wholesaleRate <= 0 ||
-  cargoRate <= 0
-) {
-  setModalAlert({
-    title: 'Проверьте стоимость',
-    message: `Проверьте суммы, валюты и курсы для модели «${product.title}».`,
-    type: 'error'
-  });
-  return;
-}
+      if (
+        item.wholesaleAmount === '' ||
+        item.cargoAmount === '' ||
+        item.salePriceTjs === '' ||
+        !Number.isFinite(wholesaleAmount) ||
+        !Number.isFinite(cargoAmount) ||
+        !Number.isFinite(salePrice) ||
+        wholesaleAmount < 0 ||
+        cargoAmount < 0 ||
+        salePrice < 0 ||
+        !Number.isFinite(wholesaleRate) ||
+        !Number.isFinite(cargoRate) ||
+        wholesaleRate <= 0 ||
+        cargoRate <= 0
+      ) {
         setModalAlert({
-          title: 'Заполните стоимость',
-          message: `Проверьте закупку, карго и цену продажи модели «${product.title}».`,
+          title: 'Проверьте стоимость',
+          message: `Проверьте суммы, валюты и курсы для модели «${product.title}».`,
           type: 'error'
         });
         return;
