@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2 } from 'lucide-react';
 
 // --- КОНФИГУРАЦИЯ БОТА И СЕРВЕРА ---
-const BOT_TOKEN = "9001028588:AAG1_dp-LI9C3TdDw9OhuH3Lw_zf4YVKnwA"; 
 const BACKEND_URL = "https://mekha-server.onrender.com"; // Ваша ссылка с Render
 
 // --- Компонент загрузки фото ---
@@ -340,102 +339,7 @@ export default function App() {
     if (!selectedCourierId) setSelectedCourierId(newC.id);
   };
 
-  const handleSendOrder = async (e) => {
-    e.preventDefault();
-    const courierObj = couriers.find(c => c.id === selectedCourierId);
-    
-    if (!courierObj || !courierObj.chatId) {
-      setModalAlert({
-        title: "Ошибка",
-        message: "Не выбран курьер или у него не указан Chat ID.",
-        type: "error"
-      });
-      return;
-    }
-
-    if (deliveryItems.length === 0) {
-      setModalAlert({
-        title: "Ошибка",
-        message: "Добавьте хотя бы один товар в заказ.",
-        type: "error"
-      });
-      return;
-    }
-
-    setSendingStatus(true);
-
-    let itemsText = deliveryItems.map(i => `• ${i.title} — *${i.qty} шт.*`).join('\n');
-
-    const messageText = `📦 *НОВЫЙ ЗАКАЗ НА ДОСТАВКУ!*\n\n` +
-      `🛍 *Товары:*\n${itemsText}\n\n` +
-      `📍 *Адрес:* ${clientAddress}\n` +
-      `📞 *Тел:* ${clientPhone}\n` +
-      `${deliveryComment ? `💬 *Комментарий:* ${deliveryComment}\n` : ''}` +
-      `\n_Пожалуйста, подтвердите статус кнопкой ниже:_`;
-
-    try {
-      const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: courierObj.chatId,
-          text: messageText,
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: "✅ Доставлено", callback_data: "delivered" },
-                { text: "⚠️ Другое (Возврат)", callback_data: "other" }
-              ]
-            ]
-          }
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.ok) {
-        const newDelivery = {
-          id: Date.now(),
-          items: deliveryItems,
-          courierName: courierObj.name,
-          clientPhone: clientPhone,
-          address: clientAddress,
-          comment: deliveryComment,
-          status: 'Ожидает ответа курьера ⏳',
-          sentAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }),
-          isProcessed: false
-        };
-
-        setDeliveries([newDelivery, ...deliveries]);
-        setDeliveryItems([]);
-        setClientPhone('');
-        setClientAddress('');
-        setDeliveryComment('');
-        
-        setModalAlert({
-          title: "Успешно отправлено!",
-          message: `Уведомление с заказом доставлено курьеру ${courierObj.name}!`,
-          type: "success"
-        });
-      } else {
-        setModalAlert({
-          title: "Ошибка Telegram",
-          message: data.description || 'Проверьте Chat ID курьера или бота.',
-          type: "error"
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setModalAlert({
-        title: "Ошибка сети",
-        message: "Не удалось отправить сообщение. Проверьте интернет-соединение.",
-        type: "error"
-      });
-    } finally {
-      setSendingStatus(false);
-    }
-  };
+const handleSendOrder = async
 
   const handleSubmitProduct = (e) => {
     e.preventDefault();
