@@ -814,25 +814,107 @@ const handleSendOrder = async (e) => {
             </div>
 
             
-              <div className="space-y-2">
-                {filteredProducts.length === 0 ? (
-                  <div className={`rounded-2xl border p-6 text-center text-xs ${
-                    isDarkMode
-                      ? 'bg-[#1E1E1E] border-gray-800 text-gray-400'
-                      : 'bg-white border-rose-100 text-gray-400'
-                  }`}>
-                    Товары не найдены
+             
+            <article
+              key={p.id}
+              className={`flex h-[88px] overflow-hidden rounded-2xl border shadow-sm ${
+                isDarkMode
+                  ? 'bg-[#1E1E1E] border-gray-800'
+                  : 'bg-white border-rose-100'
+              } ${
+                editingId === p.id ? 'ring-1 ring-rose-400' : ''
+              }`}
+            >
+              {/* Фото товара */}
+              <button
+                type="button"
+                onClick={() => setSelectedProductDetails(p)}
+                className="w-[28%] max-w-[100px] min-w-[76px] h-full shrink-0 overflow-hidden rounded-l-2xl bg-gray-100"
+              >
+                <img
+                  src={p.photo}
+                  alt={p.title}
+                  className="w-full h-full object-contain p-1"
+                />
+              </button>
+            
+              {/* Информация о товаре */}
+              <div className="min-w-0 flex-1 px-3 py-2 flex flex-col justify-between">
+            
+                {/* Название и кнопки */}
+                <div className="flex items-center justify-between gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProductDetails(p)}
+                    className={`min-w-0 truncate text-left text-[13px] font-bold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}
+                  >
+                    {p.title}
+                  </button>
+            
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      onClick={() => handleStartEdit(p)}
+                      aria-label="Редактировать"
+                      className="p-1 text-gray-400"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+            
+                    <button
+                      onClick={() => setProductToDelete(p)}
+                      aria-label="Удалить"
+                      className="p-1 text-gray-400"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                ) : (
-                  filteredProducts.map(p => {
-                    const costPerItemTJS = calcSingleItemTJS(p);
-              
-                    return (
-                       ? 'bg-[#1E1E1E] border-gray-800'
-                    );
-                  })
-                )}
+                </div>
+            
+                {/* Оптовая цена и карго */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="min-w-0">
+                    <span className="block text-[10px] text-gray-400">
+                      Оптовая цена
+                    </span>
+                    <span className="block truncate text-[11px] font-semibold">
+                      {formatCurrencyValue(p.totalWholesale, p.wholesaleCurrency)}
+                    </span>
+                  </div>
+            
+                  <div className="min-w-0">
+                    <span className="block text-[10px] text-gray-400">
+                      Карго
+                    </span>
+                    <span className="block truncate text-[11px] font-semibold">
+                      {formatCurrencyValue(p.cargoCost, p.cargoCurrency)}
+                    </span>
+                  </div>
+                </div>
+            
+                {/* Остаток и себестоимость */}
+                <div className="flex items-end justify-between gap-1">
+                  <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${
+                    isDarkMode
+                      ? 'bg-[#303030] text-gray-300'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    Остаток: {p.quantity} шт
+                  </span>
+            
+                  <div className="min-w-0 text-right leading-tight">
+                    <span className="block text-[9px] text-gray-400">
+                      Себестоимость / шт.
+                    </span>
+                    <span className="block text-[13px] font-extrabold text-rose-500">
+                      {costPerItemTJS} TJS
+                    </span>
+                  </div>
+                </div>
+            
               </div>
+            </article>
 
 
           </div>
