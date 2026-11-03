@@ -825,7 +825,7 @@ const handleSendOrder = async (e) => {
                   return (
                     <article
                       key={p.id}
-                      className={`flex h-[88px] overflow-hidden rounded-2xl border shadow-sm ${
+                      className={`flex h-[104px] overflow-hidden rounded-2xl border shadow-sm ${
                         isDarkMode
                           ? 'bg-[#1E1E1E] border-gray-800'
                           : 'bg-white border-rose-100'
