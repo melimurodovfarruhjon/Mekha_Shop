@@ -920,6 +920,12 @@ const removeBatchModel = (itemIndex) => {
 
     return (wholesaleTJS + cargoTJS) / quantity;
   };
+
+    const batchInputClass = `w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8B2635] ${
+    isDarkMode
+      ? 'bg-[#2A2A2A] border-gray-700 text-white'
+      : 'bg-white border-gray-200 text-gray-900'
+  }`;
   
   const filteredProducts = products.filter(p => 
     p.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -1935,12 +1941,6 @@ const removeBatchModel = (itemIndex) => {
                   )
                 );
 
-                const inputClass = `w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8B2635] ${
-                  isDarkMode
-                    ? 'bg-[#2A2A2A] border-gray-700 text-white'
-                    : 'bg-white border-gray-200 text-gray-900'
-                }`;
-
                 return (
                   <div
                     key={itemIndex}
@@ -1976,7 +1976,7 @@ const removeBatchModel = (itemIndex) => {
                         onChange={e =>
                           updateBatchItem(itemIndex, 'productId', e.target.value)
                         }
-                        className={inputClass}
+                        className={batchInputClass}
                       >
                         <option value="">Выберите модель</option>
 
@@ -2008,7 +2008,7 @@ const removeBatchModel = (itemIndex) => {
                         onChange={e =>
                           updateBatchItem(itemIndex, 'quantity', e.target.value)
                         }
-                        className={inputClass}
+                        className={batchInputClass}
                       />
                     </div>
 
@@ -2029,7 +2029,7 @@ const removeBatchModel = (itemIndex) => {
                           onChange={e =>
                             updateBatchItem(itemIndex, 'wholesaleAmount', e.target.value)
                           }
-                          className={inputClass}
+                          className={batchInputClass}
                         />
 
                         <select
@@ -2037,7 +2037,7 @@ const removeBatchModel = (itemIndex) => {
                           onChange={e =>
                             updateBatchItem(itemIndex, 'wholesaleCurrency', e.target.value)
                           }
-                          className={`${inputClass} mt-2`}
+                          className={`${batchInputClass} mt-2`}
                         >
                           <option value="CNY">CNY — Юань</option>
                           <option value="USD">USD — Доллар</option>
@@ -2060,7 +2060,7 @@ const removeBatchModel = (itemIndex) => {
                           onChange={e =>
                             updateBatchItem(itemIndex, 'cargoAmount', e.target.value)
                           }
-                          className={inputClass}
+                          className={batchInputClass}
                         />
 
                         <select
@@ -2068,7 +2068,7 @@ const removeBatchModel = (itemIndex) => {
                           onChange={e =>
                             updateBatchItem(itemIndex, 'cargoCurrency', e.target.value)
                           }
-                          className={`${inputClass} mt-2`}
+                          className={`${batchInputClass} mt-2`}
                         >
                           <option value="USD">USD — Доллар</option>
                           <option value="CNY">CNY — Юань</option>
@@ -2093,7 +2093,7 @@ const removeBatchModel = (itemIndex) => {
                         onChange={e =>
                           updateBatchItem(itemIndex, 'salePriceTjs', e.target.value)
                         }
-                        className={inputClass}
+                        className={batchInputClass}
                       />
                     </div>
 
@@ -2169,7 +2169,7 @@ const removeBatchModel = (itemIndex) => {
                                   e.target.value
                                 )
                               }
-                              className={inputClass}
+                              className={batchInputClass}
                             />
 
                             <input
@@ -2185,7 +2185,7 @@ const removeBatchModel = (itemIndex) => {
                                   e.target.value
                                 )
                               }
-                              className={inputClass}
+                              className={batchInputClass}
                             />
 
                             <input
@@ -2203,7 +2203,7 @@ const removeBatchModel = (itemIndex) => {
                                   e.target.value
                                 )
                               }
-                              className={inputClass}
+                              className={batchInputClass}
                             />
 
                           </div>
@@ -2248,7 +2248,7 @@ const removeBatchModel = (itemIndex) => {
                   maxLength={1000}
                   rows={3}
                   placeholder="Например: закупка у поставщика..."
-                  className={inputClass}
+                  className={batchInputClass}
                 />
               </div>
 
