@@ -560,6 +560,89 @@ const handleSendOrder = async (e) => {
   }
 };
 
+  const updateBatchItem = (itemIndex, field, value) => {
+  setBatchItems(prev =>
+    prev.map((item, index) => {
+      if (index !== itemIndex) return item;
+
+      const updated = { ...item, [field]: value };
+
+      // Если вариант только один и он стандартный,
+      // синхронизируем его количество с количеством модели.
+      if (
+        field === 'quantity' &&
+        item.variants.length === 1 &&
+        item.variants[0].color === 'Без цвета' &&
+        item.variants[0].size === 'Без размера'
+      ) {
+        updated.variants = [{
+          ...item.variants[0],
+          quantity: value
+        }];
+      }
+
+      return updated;
+    })
+  );
+};
+
+const updateBatchVariant = (itemIndex, variantIndex, field, value) => {
+  setBatchItems(prev =>
+    prev.map((item, index) => {
+      if (index !== itemIndex) return item;
+
+      return {
+        ...item,
+        variants: item.variants.map((variant, vIndex) =>
+          vIndex === variantIndex
+            ? { ...variant, [field]: value }
+            : variant
+        )
+      };
+    })
+  );
+};
+
+const addBatchVariant = (itemIndex) => {
+  setBatchItems(prev =>
+    prev.map((item, index) =>
+      index === itemIndex
+        ? {
+            ...item,
+            variants: [
+              ...item.variants,
+              { color: '', size: 'Без размера', quantity: '0' }
+            ]
+          }
+        : item
+    )
+  );
+};
+
+const removeBatchVariant = (itemIndex, variantIndex) => {
+  setBatchItems(prev =>
+    prev.map((item, index) =>
+      index === itemIndex
+        ? {
+            ...item,
+            variants: item.variants.filter(
+              (_, vIndex) => vIndex !== variantIndex
+            )
+          }
+        : item
+    )
+  );
+};
+
+const addBatchModel = () => {
+  setBatchItems(prev => [...prev, createEmptyBatchItem()]);
+};
+
+const removeBatchModel = (itemIndex) => {
+  setBatchItems(prev =>
+    prev.filter((_, index) => index !== itemIndex)
+  );
+};
 
   const handleSavePurchaseBatch = async (e) => {
     e.preventDefault();
@@ -610,12 +693,33 @@ const handleSendOrder = async (e) => {
         return;
       }
 
-      if (
-        !item.wholesaleAmount ||
-        !item.cargoAmount ||
-        item.salePriceTjs === '' ||
-        Number(item.salePriceTjs) < 0
-      ) {
+      const wholesaleAmount = Number(item.wholesaleAmount);
+const cargoAmount = Number(item.cargoAmount);
+const salePrice = Number(item.salePriceTjs);
+
+const wholesaleRate = getCurrencyRateToTJS(item.wholesaleCurrency);
+const cargoRate = getCurrencyRateToTJS(item.cargoCurrency);
+
+if (
+  item.wholesaleAmount === '' ||
+  item.cargoAmount === '' ||
+  item.salePriceTjs === '' ||
+  !Number.isFinite(wholesaleAmount) ||
+  !Number.isFinite(cargoAmount) ||
+  !Number.isFinite(salePrice) ||
+  wholesaleAmount < 0 ||
+  cargoAmount < 0 ||
+  salePrice < 0 ||
+  wholesaleRate <= 0 ||
+  cargoRate <= 0
+) {
+  setModalAlert({
+    title: 'Проверьте стоимость',
+    message: `Проверьте суммы, валюты и курсы для модели «${product.title}».`,
+    type: 'error'
+  });
+  return;
+}
         setModalAlert({
           title: 'Заполните стоимость',
           message: `Проверьте закупку, карго и цену продажи модели «${product.title}».`,
@@ -974,9 +1078,26 @@ const handleSendOrder = async (e) => {
         {/* ТОВАРЫ */}
         {activeTab === 'products' && (
           <div className="space-y-3.5">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Каталог моделей</h2>
-              <span className="text-[10px] bg-rose-100 text-[#58111A] px-2 py-0.5 rounded-full font-medium">Всего: {filteredProducts.length} моделей</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">
+                  Каталог моделей
+                </h2>
+                <span className="text-[10px] bg-rose-100 text-[#58111A] px-2 py-0.5 rounded-full font-medium">
+                  Всего: {filteredProducts.length} моделей
+                </span>
+              </div>
+            
+              <button
+                onClick={() => {
+                  setBatchItems([createEmptyBatchItem()]);
+                  setBatchNotes('');
+                  setIsBatchModalOpen(true);
+                }}
+                className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-[0.98]"
+              >
+                + Принять новую закупочную партию
+              </button>
             </div>
 
             <div className="relative">
