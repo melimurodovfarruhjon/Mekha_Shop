@@ -134,79 +134,164 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  useEffect(() => {
-    localStorage.setItem('mekha_deliveries', JSON.stringify(deliveries));
-  }, [deliveries]);
+  const deliveriesRef = useRef(deliveries);
+deliveriesRef.current = deliveries;
 
-  // СИНХРОНИЗАЦИЯ СТАТУСОВ И СТРОГО ОДНОРАЗОВОЕ СПИСАНИЕ СО СКЛАДА
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/updates`);
-        const updates = await res.json();
-        
-        if (updates && updates.length > 0) {
-          const latestEvent = updates[0];
+const syncInProgressRef = useRef(false);
 
-          setDeliveries(prevDeliveries => {
-            if (prevDeliveries.length === 0) return prevDeliveries;
-            const updated = [...prevDeliveries];
-            const lastOrder = updated[0];
+  
+// СИНХРОНИЗАЦИЯ СТАТУСОВ ПО UUID ЗАКАЗА
+useEffect(() => {
+  const syncUpdates = async () => {
+    if (syncInProgressRef.current) return;
+    syncInProgressRef.current = true;
 
-            if (lastOrder.isProcessed) return prevDeliveries;
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/updates`);
 
-            if (latestEvent.type === 'DELIVERED') {
-              lastOrder.status = 'Доставлено ✅';
-              lastOrder.updatedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              lastOrder.isProcessed = true;
-              
-              if (lastOrder.items && lastOrder.items.length > 0) {
-                setProducts(prevProducts => {
-                  let updatedProducts = [...prevProducts];
-                  
-                  lastOrder.items.forEach(orderItem => {
-                    if (orderItem.productId) {
-                      updatedProducts = updatedProducts.map(p => {
-                        if (p.id === orderItem.productId) {
-                          const newQty = Math.max(0, p.quantity - (orderItem.qty || 1));
-                          return { ...p, quantity: newQty };
-                        }
-                        return p;
-                      });
-                    }
-                  });
-                  
-                  localStorage.setItem('mekha_products', JSON.stringify(updatedProducts));
-                  return updatedProducts;
-                });
-              }
-              
-              setModalAlert({
-                title: "Заказ доставлен! 🎉",
-                message: `Курьер успешно доставил заказ. Товары списаны со склада.`,
-                type: "success"
-              });
+      if (!response.ok) {
+        throw new Error(`Updates API: ${response.status}`);
+      }
 
-            } else if (latestEvent.type === 'RETURN') {
-              lastOrder.status = `Возврат ⚠️`;
-              lastOrder.updatedAt = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              lastOrder.isProcessed = true;
+      const updates = await response.json();
 
-              setModalAlert({
-                title: "Внимание: Возврат ⚠️",
-                message: `Курьер отметил возврат по заказу.`,
-                type: "error"
-              });
-            }
+      if (!Array.isArray(updates) || updates.length === 0) return;
 
-            return updated;
+      const eventIdsToAck = [];
+
+      for (const event of updates) {
+        const eventId = Number(event.id);
+        const orderId = String(event.orderId || '');
+
+        if (!Number.isInteger(eventId) || eventId <= 0 || !orderId) {
+          continue;
+        }
+
+        const current = deliveriesRef.current;
+
+        const index = current.findIndex(
+          delivery => String(delivery.orderId || delivery.id) === orderId
+        );
+
+        // Не найден соответствующий заказ — не подтверждаем событие.
+        if (index === -1) continue;
+
+        const order = current[index];
+
+        // Уже обработано: повторно склад не списываем.
+        if (order.isProcessed) {
+          eventIdsToAck.push(eventId);
+          continue;
+        }
+
+        if (!['DELIVERED', 'RETURN'].includes(event.type)) continue;
+
+        const updatedOrder = {
+          ...order,
+          status: event.type === 'DELIVERED'
+            ? 'Доставлено ✅'
+            : 'Возврат ⚠️',
+          updatedAt: new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          isProcessed: true,
+          returnReason: event.reason || ''
+        };
+
+        const nextDeliveries = [...current];
+        nextDeliveries[index] = updatedOrder;
+
+        deliveriesRef.current = nextDeliveries;
+        setDeliveries(nextDeliveries);
+
+        // Списываем склад только при подтверждённой доставке.
+        if (event.type === 'DELIVERED' && order.items?.length) {
+          setProducts(prevProducts => {
+            const nextProducts = prevProducts.map(product => {
+              const orderedQty = order.items
+                .filter(item =>
+                  item.productId != null &&
+                  String(item.productId) === String(product.id)
+                )
+                .reduce(
+                  (sum, item) => sum + (Number(item.qty) || 0),
+                  0
+                );
+
+              if (orderedQty <= 0) return product;
+
+              return {
+                ...product,
+                quantity: Math.max(
+                  0,
+                  Number(product.quantity || 0) - orderedQty
+                )
+              };
+            });
+
+            localStorage.setItem(
+              'mekha_products',
+              JSON.stringify(nextProducts)
+            );
+
+            return nextProducts;
           });
         }
-      } catch (err) {}
-    }, 3000);
 
-    return () => clearInterval(interval);
-  }, []);
+        setModalAlert(
+          event.type === 'DELIVERED'
+            ? {
+                title: 'Заказ доставлен! 🎉',
+                message: `Курьер подтвердил доставку заказа №${order.publicNumber || '—'}.`,
+                type: 'success'
+              }
+            : {
+                title: 'Внимание: возврат ⚠️',
+                message: `Курьер отметил возврат заказа №${order.publicNumber || '—'}. ${
+                  event.reason || ''
+                }`,
+                type: 'error'
+              }
+        );
+
+        eventIdsToAck.push(eventId);
+      }
+
+      // Подтверждаем серверу только обработанные события.
+      if (eventIdsToAck.length > 0) {
+        const ackResponse = await fetch(
+          `${BACKEND_URL}/api/updates/ack`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              eventIds: [...new Set(eventIdsToAck)]
+            })
+          }
+        );
+
+        if (!ackResponse.ok) {
+          throw new Error(`Updates ACK: ${ackResponse.status}`);
+        }
+      }
+
+    } catch (error) {
+      console.error('Order synchronization error:', error);
+    } finally {
+      syncInProgressRef.current = false;
+    }
+  };
+
+  syncUpdates();
+
+  const interval = setInterval(syncUpdates, 3000);
+
+  return () => clearInterval(interval);
+}, []);
+
 
   // Функция подписки на пуш-уведомления (на правильном месте внутри App)
   const subscribeUserToPush = async () => {
