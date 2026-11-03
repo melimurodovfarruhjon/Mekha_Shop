@@ -339,7 +339,112 @@ export default function App() {
     if (!selectedCourierId) setSelectedCourierId(newC.id);
   };
 
-const handleSendOrder = async
+
+const handleSendOrder = async (e) => {
+  e.preventDefault();
+
+  const courierObj = couriers.find(
+    c => c.id === selectedCourierId
+  );
+
+  if (!courierObj || !courierObj.chatId) {
+    setModalAlert({
+      title: "Ошибка",
+      message: "Не выбран курьер или у него не указан Chat ID.",
+      type: "error"
+    });
+    return;
+  }
+
+  if (deliveryItems.length === 0) {
+    setModalAlert({
+      title: "Ошибка",
+      message: "Добавьте хотя бы один товар в заказ.",
+      type: "error"
+    });
+    return;
+  }
+
+  setSendingStatus(true);
+
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        courierName: courierObj.name,
+        courierChatId: courierObj.chatId,
+        clientPhone,
+        clientAddress,
+        comment: deliveryComment,
+        items: deliveryItems.map(item => ({
+          productId: item.productId || null,
+          title: item.title,
+          qty: Number(item.qty),
+          photo: item.photo || null
+        }))
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.status === 201 && data.success) {
+      const newDelivery = {
+        id: data.orderId,
+        orderId: data.orderId,
+        items: deliveryItems,
+        courierName: courierObj.name,
+        clientPhone,
+        address: clientAddress,
+        comment: deliveryComment,
+        status: 'Ожидает ответа курьера ⏳',
+        sentAt: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit'
+        }),
+        isProcessed: false
+      };
+
+      setDeliveries(prev => [newDelivery, ...prev]);
+      setDeliveryItems([]);
+      setClientPhone('');
+      setClientAddress('');
+      setDeliveryComment('');
+
+      setModalAlert({
+        title: "Успешно отправлено!",
+        message: `Заказ отправлен курьеру ${courierObj.name}.`,
+        type: "success"
+      });
+
+    } else {
+      setModalAlert({
+        title: data.saved
+          ? "Заказ сохранён, но не отправлен"
+          : "Ошибка отправки",
+        message: data.error || "Не удалось отправить заказ.",
+        type: "error"
+      });
+    }
+
+  } catch (err) {
+    console.error("Order request error:", err);
+
+    setModalAlert({
+      title: "Ошибка сети",
+      message: "Не удалось связаться с сервером.",
+      type: "error"
+    });
+
+  } finally {
+    setSendingStatus(false);
+  }
+};
+
 
   const handleSubmitProduct = (e) => {
     e.preventDefault();
