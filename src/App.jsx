@@ -374,6 +374,7 @@ useEffect(() => {
   const [prodCargoCurrency, setProdCargoCurrency] = useState('USD');
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [currentPhotoPreview, setCurrentPhotoPreview] = useState(null);
+  const [isQuickAddMenuOpen, setIsQuickAddMenuOpen] = useState(false);
 
   
   // ФОРМА НОВОЙ ЗАКУПОЧНОЙ ПАРТИИ
@@ -2400,22 +2401,14 @@ const removeBatchModel = (itemIndex) => {
 
         {/* ЦЕНТРАЛЬНАЯ КНОПКА + */}
         <div className="flex-1 flex justify-center -mt-5">
-          <button 
-            onClick={() => {
-              setEditingId(null);
-              setProdTitle('');
-              setProdQty('6');
-              setProdWholesale('');
-              setProdCargoCost('');
-              setSelectedImageFile(null);
-              setCurrentPhotoPreview(null);
-              setIsAddModalOpen(true);
-            }}
+          <button
+            type="button"
+            onClick={() => setIsQuickAddMenuOpen(prev => !prev)}
             className={`w-12 h-12 rounded-full bg-[#58111A] text-white flex items-center justify-center shadow-lg border-4 active:scale-95 transition-transform ${
               isDarkMode ? 'border-[#121212]' : 'border-[#FAF8F5]'
             }`}
           >
-            <Plus size={22} />
+            {isQuickAddMenuOpen ? <X size={22} /> : <Plus size={22} />}
           </button>
         </div>
 
