@@ -1963,559 +1963,132 @@ const handleSavePurchaseBatch = async (e) => {
   </div>
 )}
 
-      {/* МОДАЛЬНОЕ ОКНО ЗАКУПОЧНОЙ ПАРТИИ */}
-      {isBatchModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-3">
-          <div className={`w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-5 shadow-2xl space-y-5 ${
-            isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
-          }`}>
-
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-bold">Новая закупочная партия</h2>
-                <p className="text-xs text-gray-400 mt-1">
-                  Добавьте модели и укажите расходы по каждой из них
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsBatchModalOpen(false)}
-                className="text-gray-400 text-xl px-2"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleSavePurchaseBatch} className="space-y-5">
-
-              {batchItems.map((item, itemIndex) => {
-                const selectedProduct = products.find(
-                  p => String(p.id) === String(item.productId)
-                );
-
-                const variantsTotal = item.variants.reduce(
-                  (sum, variant) => sum + (Number(variant.quantity) || 0),
-                  0
-                );
-
-                const availableProducts = products.filter(p =>
-                  !batchItems.some((other, otherIndex) =>
-                    otherIndex !== itemIndex &&
-                    String(other.productId) === String(p.id)
-                  )
-                );
-
-                return (
-                  <div
-                    key={itemIndex}
-                    className={`rounded-2xl border p-4 space-y-4 ${
-                      isDarkMode ? 'border-gray-700 bg-[#252525]' : 'border-rose-100 bg-rose-50/30'
-                    }`}
-                  >
-
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-bold text-sm">
-                        Модель №{itemIndex + 1}
-                      </h3>
-
-                      {batchItems.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeBatchModel(itemIndex)}
-                          className="text-red-500 text-xs font-semibold"
-                        >
-                          Удалить модель
-                        </button>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold block mb-1.5">
-                        Выберите модель из каталога
-                      </label>
-
-                      <select
-                        required
-                        value={item.productId}
-                        onChange={e =>
-                          updateBatchItem(itemIndex, 'productId', e.target.value)
-                        }
-                        className={batchInputClass}
-                      >
-                        <option value="">Выберите модель</option>
-
-                        {availableProducts.map(product => (
-                          <option key={product.id} value={product.id}>
-                            {product.title}
-                          </option>
-                        ))}
-                      </select>
-
-                      {products.length === 0 && (
-                        <p className="text-xs text-red-500 mt-1">
-                          Сначала добавьте модель в каталог.
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold block mb-1.5">
-                        Общее количество единиц
-                      </label>
-
-                      <input
-                        required
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={item.quantity}
-                        onChange={e =>
-                          updateBatchItem(itemIndex, 'quantity', e.target.value)
-                        }
-                        className={batchInputClass}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                      <div>
-                        <label className="text-xs font-semibold block mb-1.5">
-                          Общая закупочная стоимость
-                        </label>
-
-                        <input
-                          required
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="Например, 500"
-                          value={item.wholesaleAmount}
-                          onChange={e =>
-                            updateBatchItem(itemIndex, 'wholesaleAmount', e.target.value)
-                          }
-                          className={batchInputClass}
-                        />
-
-                        <select
-                          value={item.wholesaleCurrency}
-                          onChange={e =>
-                            updateBatchItem(itemIndex, 'wholesaleCurrency', e.target.value)
-                          }
-                          className={`${batchInputClass} mt-2`}
-                        >
-                          <option value="CNY">CNY — Юань</option>
-                          <option value="USD">USD — Доллар</option>
-                          <option value="TJS">TJS — Сомони</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="text-xs font-semibold block mb-1.5">
-                          Общее карго этой модели
-                        </label>
-
-                        <input
-                          required
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="Например, 20"
-                          value={item.cargoAmount}
-                          onChange={e =>
-                            updateBatchItem(itemIndex, 'cargoAmount', e.target.value)
-                          }
-                          className={batchInputClass}
-                        />
-
-                        <select
-                          value={item.cargoCurrency}
-                          onChange={e =>
-                            updateBatchItem(itemIndex, 'cargoCurrency', e.target.value)
-                          }
-                          className={`${batchInputClass} mt-2`}
-                        >
-                          <option value="USD">USD — Доллар</option>
-                          <option value="CNY">CNY — Юань</option>
-                          <option value="TJS">TJS — Сомони</option>
-                        </select>
-                      </div>
-
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold block mb-1.5">
-                        Цена продажи за одну единицу (TJS)
-                      </label>
-
-                      <input
-                        required
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="Например, 150"
-                        value={item.salePriceTjs}
-                        onChange={e =>
-                          updateBatchItem(itemIndex, 'salePriceTjs', e.target.value)
-                        }
-                        className={batchInputClass}
-                      />
-                    </div>
-
-                    <div className={`rounded-xl p-3 ${
-                      isDarkMode ? 'bg-[#1A1A1A]' : 'bg-white'
-                    }`}>
-                      <p className="text-xs text-gray-400">
-                        Предварительная себестоимость одной единицы
-                      </p>
-
-                      <p className="text-xl font-bold text-[#8B2635] mt-1">
-                        {calculateBatchItemCost(item).toFixed(2)} TJS
-                      </p>
-
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        Расчёт по текущим курсам. Итоговую стоимость фиксирует сервер.
-                      </p>
-                    </div>
-
-                    <div className="border-t border-gray-500/20 pt-4 space-y-3">
-
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-bold text-sm">
-                          Цвета и размеры
-                        </h4>
-
-                        <span className={`text-xs ${
-                          variantsTotal === Number(item.quantity)
-                            ? 'text-green-500'
-                            : 'text-orange-500'
-                        }`}>
-                          {variantsTotal} / {item.quantity || 0} шт.
-                        </span>
-                      </div>
-
-                      {item.variants.map((variant, variantIndex) => (
-                        <div
-                          key={variantIndex}
-                          className={`rounded-xl p-3 space-y-2 ${
-                            isDarkMode ? 'bg-[#303030]' : 'bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-semibold">
-                              Вариант №{variantIndex + 1}
-                            </span>
-
-                            {item.variants.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  removeBatchVariant(itemIndex, variantIndex)
-                                }
-                                className="text-red-500 text-xs"
-                              >
-                                Удалить
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-
-                            <input
-                              required
-                              type="text"
-                              placeholder="Цвет"
-                              value={variant.color}
-                              onChange={e =>
-                                updateBatchVariant(
-                                  itemIndex,
-                                  variantIndex,
-                                  'color',
-                                  e.target.value
-                                )
-                              }
-                              className={batchInputClass}
-                            />
-
-                            <input
-                              required
-                              type="text"
-                              placeholder="Размер"
-                              value={variant.size}
-                              onChange={e =>
-                                updateBatchVariant(
-                                  itemIndex,
-                                  variantIndex,
-                                  'size',
-                                  e.target.value
-                                )
-                              }
-                              className={batchInputClass}
-                            />
-
-                            <input
-                              required
-                              type="number"
-                              min="0"
-                              step="1"
-                              placeholder="Количество"
-                              value={variant.quantity}
-                              onChange={e =>
-                                updateBatchVariant(
-                                  itemIndex,
-                                  variantIndex,
-                                  'quantity',
-                                  e.target.value
-                                )
-                              }
-                              className={batchInputClass}
-                            />
-
-                          </div>
-                        </div>
-                      ))}
-
-                      <button
-                        type="button"
-                        onClick={() => addBatchVariant(itemIndex)}
-                        className="w-full border border-dashed border-[#8B2635] text-[#8B2635] py-2.5 rounded-xl text-xs font-bold"
-                      >
-                        + Добавить цвет или размер
-                      </button>
-
-                      {variantsTotal !== Number(item.quantity) && (
-                        <p className="text-xs text-orange-500">
-                          Сумма количеств всех вариантов должна совпадать с общим количеством модели.
-                        </p>
-                      )}
-
-                    </div>
-                  </div>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={addBatchModel}
-                className="w-full border border-dashed border-[#8B2635] text-[#8B2635] py-3 rounded-xl text-xs font-bold"
-              >
-                + Добавить ещё одну модель в партию
-              </button>
-
-              <div>
-                <label className="text-xs font-semibold block mb-1.5">
-                  Примечание к партии (необязательно)
-                </label>
-
-                <textarea
-                  value={batchNotes}
-                  onChange={e => setBatchNotes(e.target.value)}
-                  maxLength={1000}
-                  rows={3}
-                  placeholder="Например: закупка у поставщика..."
-                  className={batchInputClass}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={batchSaving || batchItems.length === 0}
-                className="w-full bg-[#58111A] text-white py-3.5 rounded-xl text-sm font-bold disabled:opacity-50"
-              >
-                {batchSaving ? 'Сохранение партии...' : 'Сохранить закупочную партию'}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsBatchModalOpen(false)}
-                disabled={batchSaving}
-                className="w-full py-2 text-xs text-gray-400 font-semibold"
-              >
-                Отмена
-              </button>
-
-            </form>
-          </div>
-        </div>
-      )}
       
-      {/* МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ */}
-      {productToDelete && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center space-y-4 animate-scale-up ${
-            isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
-          }`}>
-            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto">
-              <AlertTriangle size={24} />
-            </div>
-
-            <div>
-              <h3 className="text-sm font-bold">Подтверждение удаления</h3>
-              <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
-                Вы точно хотите удалить <br />
-                <span className="font-bold text-rose-400">«{productToDelete.title}»</span>?
-              </p>
-            </div>
-
-            <div className="flex gap-2 pt-1">
-              <button 
-                onClick={() => setProductToDelete(null)}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold ${
-                  isDarkMode ? 'bg-[#2A2A2A] text-gray-300' : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                Отмена
-              </button>
-              <button 
-                onClick={confirmDeleteProduct}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-colors active:scale-95"
-              >
-                Да, удалить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* МОДАЛЬНОЕ ОКНО КАРТОЧКИ ТОВАРА */}
-      {selectedProductDetails && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 relative animate-scale-up ${
-            isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
-          }`}>
-            <button 
-              onClick={() => setSelectedProductDetails(null)}
-              className={`absolute top-3 right-3 p-1.5 rounded-full ${
-                isDarkMode ? 'bg-[#2A2A2A] text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-500 hover:text-black'
-              }`}
-            >
-              <X size={18} />
-            </button>
-
-            <div className="w-full h-56 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
-              <img 
-                src={selectedProductDetails.photo} 
-                alt={selectedProductDetails.title} 
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <div>
-              <span className="text-[10px] bg-rose-50 text-[#58111A] border border-rose-200 px-2.5 py-0.5 rounded-full font-bold">
-                Карточка товара
-              </span>
-              <h3 className="text-base font-bold mt-1">
-                {selectedProductDetails.title}
-              </h3>
-            </div>
-
-            <div className={`rounded-2xl p-3.5 space-y-2 border text-xs ${
-              isDarkMode ? 'bg-[#252525] border-gray-800' : 'bg-gray-50 border-gray-100'
+        {/* МОДАЛЬНОЕ ОКНО ПОШАГОВОЙ ПОСТАВКИ */}
+        {isBatchModalOpen && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className={`w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-6 ${
+              isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
             }`}>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Партия / Объем:</span>
-                <span className="font-bold">{selectedProductDetails.quantity} шт</span>
+
+              {/* Заголовок */}
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-bold">Новая поставка</h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Последовательно заполните информацию
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsBatchModalOpen(false)}
+                  className="text-gray-400 text-2xl px-2"
+                >
+                  ×
+                </button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Закупка оптом:</span>
-                <span className="font-bold">{formatCurrencyValue(selectedProductDetails.totalWholesale, selectedProductDetails.wholesaleCurrency)}</span>
+
+              {/* Прогресс */}
+              <div>
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="font-semibold">Шаг {batchStep} из 5</span>
+                  <span className="text-gray-400">
+                    {Math.round((batchStep / 5) * 100)}%
+                  </span>
+                </div>
+
+                <div className={`h-2 rounded-full overflow-hidden ${
+                  isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                }`}>
+                  <div
+                    className="h-full bg-[#8B2635] rounded-full transition-all"
+                    style={{ width: `${(batchStep / 5) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Доставка Карго:</span>
-                <span className="font-bold">{formatCurrencyValue(selectedProductDetails.cargoCost, selectedProductDetails.cargoCurrency)}</span>
-              </div>
-              <div className={`border-t pt-2 flex justify-between items-center ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                <span className="font-bold text-gray-400">Себестоимость 1 шт:</span>
-                <span className="font-bold text-sm text-rose-500">
-                  {calcSingleItemTJS(selectedProductDetails)} TJS
-                </span>
-              </div>
+
+              {/* Шаг 1 */}
+              {batchStep === 1 && (
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="text-base font-bold">
+                      Название поставки
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Укажите понятное название для учёта закупки
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-2">
+                      Название
+                    </label>
+
+                    <input
+                      type="text"
+                      value={batchName}
+                      onChange={e => setBatchName(e.target.value)}
+                      placeholder="Например, Поставка от 05.11.2026"
+                      maxLength={100}
+                      className={batchInputClass}
+                    />
+                  </div>
+
+                  <div className={`rounded-xl p-3 text-xs ${
+                    isDarkMode
+                      ? 'bg-[#252525] text-gray-400'
+                      : 'bg-rose-50 text-gray-500'
+                  }`}>
+                    Название можно изменить. Оно поможет быстро найти поставку
+                    в истории закупок.
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={!batchName.trim()}
+                    onClick={() => setBatchStep(2)}
+                    className="w-full bg-[#58111A] text-white py-3.5 rounded-xl text-sm font-bold disabled:opacity-40"
+                  >
+                    Далее
+                  </button>
+                </div>
+              )}
+
+              {/* Временный экран следующего шага */}
+              {batchStep > 1 && (
+                <div className="space-y-4">
+                  <h3 className="font-bold">Следующий шаг</h3>
+                  <p className="text-sm text-gray-400">
+                    Здесь будет следующий этап оформления поставки.
+                  </p>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBatchStep(prev => prev - 1)}
+                      className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
+                        isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
+                      }`}
+                    >
+                      Назад
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setBatchStep(1)}
+                      className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold"
+                    >
+                      К первому шагу
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
-
-            <button 
-              onClick={() => setSelectedProductDetails(null)}
-              className="w-full bg-[#58111A] text-white py-2.5 rounded-xl text-xs font-semibold"
-            >
-              Закрыть
-            </button>
-
           </div>
-        </div>
-      )}
+        )}
 
-          {isQuickAddMenuOpen && (
-      <>
-        <button
-          type="button"
-          aria-label="Закрыть меню"
-          onClick={() => setIsQuickAddMenuOpen(false)}
-          className="fixed inset-0 z-30 bg-black/30"
-        />
-    
-        <div className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-40 w-[min(340px,calc(100vw-32px))] rounded-2xl p-3 shadow-2xl border ${
-          isDarkMode
-            ? 'bg-[#1E1E1E] border-gray-700 text-white'
-            : 'bg-white border-rose-100 text-gray-900'
-        }`}>
-          <p className="text-xs font-bold text-gray-400 px-2 pb-2">
-            ЧТО ДОБАВИТЬ?
-          </p>
-    
-          <button
-            type="button"
-            onClick={() => {
-              setIsQuickAddMenuOpen(false);
-              setEditingId(null);
-              setProdTitle('');
-              setProdQty('6');
-              setProdWholesale('');
-              setProdCargoCost('');
-              setSelectedImageFile(null);
-              setCurrentPhotoPreview(null);
-              setIsAddModalOpen(true);
-            }}
-            className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-rose-50"
-          >
-            <span className="w-10 h-10 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center">
-              <PlusCircle size={20} />
-            </span>
-    
-            <span>
-              <span className="block text-sm font-bold">Добавить товар</span>
-              <span className="block text-xs text-gray-400">
-                Создать новую модель в каталоге
-              </span>
-            </span>
-          </button>
-    
-          <button
-            type="button"
-            onClick={() => {
-              setIsQuickAddMenuOpen(false);
-              setBatchItems([createEmptyBatchItem()]);
-              setBatchNotes('');
-              setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
-              setBatchNewProductTitle('');
-              setBatchStep(1);
-              setShowBatchVariants(false);
-              setIsBatchModalOpen(true);
-            }}
-            className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-rose-50"
-          >
-            <span className="w-10 h-10 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center">
-              <Truck size={20} />
-            </span>
-    
-            <span>
-              <span className="block text-sm font-bold">Новая поставка</span>
-              <span className="block text-xs text-gray-400">
-                Принять товары на склад
-              </span>
-            </span>
-          </button>
-        </div>
-      </>
-    )}
 
       {/* Нижняя навигация */}
       <nav className={`flex justify-around items-center border-t h-16 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20 shadow-lg px-2 transition-colors ${
