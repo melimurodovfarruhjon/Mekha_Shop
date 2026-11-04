@@ -850,7 +850,7 @@ const removeBatchModel = (itemIndex) => {
     type: 'success'
   });
 };
-        return p;
+                return p;
       }));
       setEditingId(null);
     } else {
