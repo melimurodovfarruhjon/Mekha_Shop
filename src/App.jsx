@@ -2379,6 +2379,76 @@ const removeBatchModel = (itemIndex) => {
         </div>
       )}
 
+          {isQuickAddMenuOpen && (
+      <>
+        <button
+          type="button"
+          aria-label="Закрыть меню"
+          onClick={() => setIsQuickAddMenuOpen(false)}
+          className="fixed inset-0 z-30 bg-black/30"
+        />
+    
+        <div className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-40 w-[min(340px,calc(100vw-32px))] rounded-2xl p-3 shadow-2xl border ${
+          isDarkMode
+            ? 'bg-[#1E1E1E] border-gray-700 text-white'
+            : 'bg-white border-rose-100 text-gray-900'
+        }`}>
+          <p className="text-xs font-bold text-gray-400 px-2 pb-2">
+            ЧТО ДОБАВИТЬ?
+          </p>
+    
+          <button
+            type="button"
+            onClick={() => {
+              setIsQuickAddMenuOpen(false);
+              setEditingId(null);
+              setProdTitle('');
+              setProdQty('6');
+              setProdWholesale('');
+              setProdCargoCost('');
+              setSelectedImageFile(null);
+              setCurrentPhotoPreview(null);
+              setIsAddModalOpen(true);
+            }}
+            className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-rose-50"
+          >
+            <span className="w-10 h-10 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center">
+              <PlusCircle size={20} />
+            </span>
+    
+            <span>
+              <span className="block text-sm font-bold">Добавить товар</span>
+              <span className="block text-xs text-gray-400">
+                Создать новую модель в каталоге
+              </span>
+            </span>
+          </button>
+    
+          <button
+            type="button"
+            onClick={() => {
+              setIsQuickAddMenuOpen(false);
+              setBatchItems([createEmptyBatchItem()]);
+              setBatchNotes('');
+              setIsBatchModalOpen(true);
+            }}
+            className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-rose-50"
+          >
+            <span className="w-10 h-10 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center">
+              <Truck size={20} />
+            </span>
+    
+            <span>
+              <span className="block text-sm font-bold">Новая поставка</span>
+              <span className="block text-xs text-gray-400">
+                Принять товары на склад
+              </span>
+            </span>
+          </button>
+        </div>
+      </>
+    )}
+
       {/* Нижняя навигация */}
       <nav className={`flex justify-around items-center border-t h-16 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20 shadow-lg px-2 transition-colors ${
         isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
