@@ -2114,7 +2114,16 @@ const handleSavePurchaseBatch = async (e) => {
         <div className="flex-1 flex justify-center -mt-5">
           <button
             type="button"
-            onClick={() => setIsQuickAddMenuOpen(prev => !prev)}
+              onClick={() => {
+                setIsQuickAddMenuOpen(false);
+                setBatchItems([createEmptyBatchItem()]);
+                setBatchNotes('');
+                setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
+                setBatchNewProductTitle('');
+                setBatchStep(1);
+                setShowBatchVariants(false);
+                setIsBatchModalOpen(true);
+              }}
             className={`w-12 h-12 rounded-full bg-[#58111A] text-white flex items-center justify-center shadow-lg border-4 active:scale-95 transition-transform ${
               isDarkMode ? 'border-[#121212]' : 'border-[#FAF8F5]'
             }`}
