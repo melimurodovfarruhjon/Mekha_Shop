@@ -817,6 +817,7 @@ const removeBatchModel = (itemIndex) => {
       )
     );
   } else {
+    
     // Новая модель создаётся без закупки и без складского остатка.
     const newProduct = {
       id: Date.now(),
@@ -850,31 +851,6 @@ const removeBatchModel = (itemIndex) => {
     type: 'success'
   });
 };
-                return p;
-      }));
-      setEditingId(null);
-    } else {
-      const newProd = {
-        id: Date.now(),
-        title: prodTitle,
-        photo: currentPhotoPreview || 'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=400',
-        quantity: parseInt(prodQty) || 1,
-        totalWholesale: parseFloat(prodWholesale) || 0,
-        wholesaleCurrency: prodWholesaleCurrency,
-        cargoCost: parseFloat(prodCargoCost) || 0,
-        cargoCurrency: prodCargoCurrency,
-      };
-      setProducts([newProd, ...products]);
-    }
-
-    setProdTitle('');
-    setProdQty('6');
-    setProdWholesale('');
-    setProdCargoCost('');
-    setSelectedImageFile(null);
-    setCurrentPhotoPreview(null);
-    setIsAddModalOpen(false);
-  };
 
   const handleStartEdit = (p) => {
     setEditingId(p.id);
