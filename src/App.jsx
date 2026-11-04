@@ -789,23 +789,67 @@ const removeBatchModel = (itemIndex) => {
   };
   
   const handleSubmitProduct = (e) => {
-    e.preventDefault();
-    if (!prodTitle) return;
+  e.preventDefault();
 
-    if (editingId) {
-      setProducts(products.map(p => {
-        if (p.id === editingId) {
-          return {
-            ...p,
-            title: prodTitle,
-            quantity: parseInt(prodQty) || 1,
-            totalWholesale: parseFloat(prodWholesale) || 0,
-            wholesaleCurrency: prodWholesaleCurrency,
-            cargoCost: parseFloat(prodCargoCost) || 0,
-            cargoCurrency: prodCargoCurrency,
-            photo: currentPhotoPreview || p.photo
-          };
-        }
+  const cleanTitle = prodTitle.trim();
+
+  if (!cleanTitle) {
+    setModalAlert({
+      title: 'Укажите название',
+      message: 'Введите название модели товара, чтобы сохранить карточку.',
+      type: 'error'
+    });
+    return;
+  }
+
+  if (editingId) {
+    // При редактировании меняем только название и фотографию.
+    // Остатки и финансовые данные не затрагиваем.
+    setProducts(prev =>
+      prev.map(product =>
+        product.id === editingId
+          ? {
+              ...product,
+              title: cleanTitle,
+              photo: currentPhotoPreview || product.photo
+            }
+          : product
+      )
+    );
+  } else {
+    // Новая модель создаётся без закупки и без складского остатка.
+    const newProduct = {
+      id: Date.now(),
+      title: cleanTitle,
+      photo: currentPhotoPreview ||
+        'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=400',
+      quantity: 0,
+      totalWholesale: 0,
+      wholesaleCurrency: 'CNY',
+      cargoCost: 0,
+      cargoCurrency: 'USD'
+    };
+
+    setProducts(prev => [newProduct, ...prev]);
+  }
+
+  setEditingId(null);
+  setProdTitle('');
+  setProdQty('');
+  setProdWholesale('');
+  setProdCargoCost('');
+  setSelectedImageFile(null);
+  setCurrentPhotoPreview(null);
+  setIsAddModalOpen(false);
+
+  setModalAlert({
+    title: editingId ? 'Изменения сохранены' : 'Модель добавлена',
+    message: editingId
+      ? 'Название и фотография товара обновлены.'
+      : 'Модель добавлена в каталог. Чтобы получить складской остаток, зарегистрируйте новую поставку.',
+    type: 'success'
+  });
+};
         return p;
       }));
       setEditingId(null);
@@ -1770,134 +1814,132 @@ const removeBatchModel = (itemIndex) => {
         </div>
       )}
 
-      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ТОВАРА */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3.5 relative animate-scale-up ${
-            isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
-          }`}>
-            <button 
-              onClick={handleCancelEdit}
-              className={`absolute top-3.5 right-3.5 p-1.5 rounded-full ${
-                isDarkMode ? 'bg-[#2A2A2A] text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-500 hover:text-black'
-              }`}
-            >
-              <X size={16} />
-            </button>
+     {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ТОВАРА */}
+{isAddModalOpen && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className={`w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-5 relative animate-scale-up ${
+      isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
+    }`}>
 
-            <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider flex items-center gap-1.5">
-              {editingId ? <Edit3 size={15} /> : <PlusCircle size={15} />}
-              {editingId ? 'Редактировать товар' : 'Добавить позицию закупки'}
-            </h3>
+      <button
+        type="button"
+        onClick={handleCancelEdit}
+        aria-label="Закрыть окно"
+        className={`absolute top-3 right-3 p-2 rounded-full ${
+          isDarkMode
+            ? 'bg-[#2A2A2A] text-gray-400'
+            : 'bg-gray-100 text-gray-500'
+        }`}
+      >
+        <X size={17} />
+      </button>
 
-            <form onSubmit={handleSubmitProduct} className="space-y-3">
-              <input 
-                type="text" 
-                value={prodTitle}
-                onChange={(e) => setProdTitle(e.target.value)}
-                placeholder="Название товара / модели" 
-                className={`w-full p-3 border rounded-xl text-sm outline-none focus:border-[#58111A] ${
-                  isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                }`}
-              />
-
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <ImageUploader 
-                    onImageUpload={(file) => {
-                      setSelectedImageFile(file);
-                      const reader = new FileReader();
-                      reader.onload = () => setCurrentPhotoPreview(reader.result);
-                      reader.readAsDataURL(file);
-                    }} 
-                    currentPreview={currentPhotoPreview}
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-                <input 
-                  type="text"
-                  inputMode="numeric"
-                  value={prodQty}
-                  onChange={handleNumericInput(setProdQty)}
-                  placeholder="Кол-во" 
-                  className={`w-20 p-2.5 border rounded-xl text-sm text-center font-bold outline-none focus:border-[#58111A] ${
-                    isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                  }`}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-medium">Оптовая закупка</label>
-                <div className={`flex border rounded-xl overflow-hidden focus-within:border-[#58111A] p-1 gap-1 ${
-                  isDarkMode ? 'bg-[#2A2A2A] border-gray-700' : 'bg-gray-50 border-gray-200'
-                }`}>
-                  <input 
-                    type="text" 
-                    inputMode="decimal"
-                    value={prodWholesale}
-                    onChange={handleNumericInput(setProdWholesale)}
-                    placeholder="Сумма оптом" 
-                    className="w-full px-2.5 py-1.5 bg-transparent text-sm outline-none font-medium"
-                  />
-                  <div className={`flex p-0.5 rounded-lg text-[10px] font-bold ${isDarkMode ? 'bg-black/30' : 'bg-gray-200/60'}`}>
-                    {['CNY', 'USD', 'TJS'].map((curr) => (
-                      <button
-                        type="button"
-                        key={curr}
-                        onClick={() => setProdWholesaleCurrency(curr)}
-                        className={`px-2 py-1 rounded-md transition-all ${
-                          prodWholesaleCurrency === curr 
-                            ? 'bg-[#58111A] text-white shadow-sm' 
-                            : 'text-gray-400 hover:text-white'
-                        }`}
-                      >
-                        {curr === 'CNY' ? '¥' : curr === 'USD' ? '$' : 'TJS'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-medium">Доставка Карго</label>
-                <div className={`flex border rounded-xl overflow-hidden focus-within:border-[#58111A] p-1 gap-1 ${
-                  isDarkMode ? 'bg-[#2A2A2A] border-gray-700' : 'bg-gray-50 border-gray-200'
-                }`}>
-                  <input 
-                    type="text" 
-                    inputMode="decimal"
-                    value={prodCargoCost}
-                    onChange={handleNumericInput(setProdCargoCost)}
-                    placeholder="Карго за всё" 
-                    className="w-full px-2.5 py-1.5 bg-transparent text-sm outline-none font-medium"
-                  />
-                  <div className={`flex p-0.5 rounded-lg text-[10px] font-bold ${isDarkMode ? 'bg-black/30' : 'bg-gray-200/60'}`}>
-                    {['CNY', 'USD', 'TJS'].map((curr) => (
-                      <button
-                        type="button"
-                        key={curr}
-                        onClick={() => setProdCargoCurrency(curr)}
-                        className={`px-2 py-1 rounded-md transition-all ${
-                          prodCargoCurrency === curr 
-                            ? 'bg-[#58111A] text-white shadow-sm' 
-                            : 'text-gray-400 hover:text-white'
-                        }`}
-                      >
-                        {curr === 'CNY' ? '¥' : curr === 'USD' ? '$' : 'TJS'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <button type="submit" className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-semibold active:scale-95 transition-transform flex items-center justify-center gap-1.5">
-                {editingId ? <Check size={14} /> : null}
-                {editingId ? 'Сохранить изменения' : 'Добавить в таблицу'}
-              </button>
-            </form>
-          </div>
+      <div className="pr-8">
+        <div className="flex items-center gap-2 text-[#8B2635]">
+          {editingId ? <Edit3 size={18} /> : <PlusCircle size={18} />}
+          <h3 className="text-base font-bold">
+            {editingId ? 'Редактировать модель' : 'Новая модель товара'}
+          </h3>
         </div>
-      )}
+
+        <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
+          {editingId
+            ? 'Измените название или фотографию товара.'
+            : 'Создайте карточку товара. Закупку и количество добавите позже через новую поставку.'}
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmitProduct} className="space-y-4">
+
+        {/* НАЗВАНИЕ */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold">
+            Название модели <span className="text-red-500">*</span>
+          </label>
+
+          <input
+            type="text"
+            required
+            autoFocus
+            maxLength={100}
+            value={prodTitle}
+            onChange={e => setProdTitle(e.target.value)}
+            placeholder="Например: Свитер белый"
+            className={`w-full p-3.5 border rounded-xl text-sm outline-none focus:border-[#8B2635] ${
+              isDarkMode
+                ? 'bg-[#2A2A2A] border-gray-700 text-white'
+                : 'bg-gray-50 border-gray-200 text-gray-900'
+            }`}
+          />
+        </div>
+
+        {/* ФОТОГРАФИЯ */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold">
+            Фотография товара
+          </label>
+
+          <ImageUploader
+            onImageUpload={(file) => {
+              setSelectedImageFile(file);
+
+              const reader = new FileReader();
+              reader.onload = () => setCurrentPhotoPreview(reader.result);
+              reader.readAsDataURL(file);
+            }}
+            currentPreview={currentPhotoPreview}
+            isDarkMode={isDarkMode}
+          />
+
+          <p className="text-[10px] text-gray-400">
+            Фотография необязательна. Можно добавить её позже.
+          </p>
+        </div>
+
+        {/* ПОЯСНЕНИЕ */}
+        {!editingId && (
+          <div className={`rounded-xl p-3 flex gap-2.5 ${
+            isDarkMode
+              ? 'bg-[#252525]'
+              : 'bg-rose-50'
+          }`}>
+            <CheckCircle2
+              size={17}
+              className="text-[#8B2635] flex-shrink-0 mt-0.5"
+            />
+
+            <div>
+              <p className="text-xs font-bold">
+                Карточка без закупки
+              </p>
+              <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                После создания остаток будет 0 шт. Чтобы добавить товар на склад, оформите новую поставку.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={!prodTitle.trim()}
+          className="w-full bg-[#58111A] text-white py-3.5 rounded-xl text-sm font-bold active:scale-95 transition-transform disabled:opacity-40 flex items-center justify-center gap-2"
+        >
+          <Check size={16} />
+          {editingId ? 'Сохранить изменения' : 'Создать карточку'}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleCancelEdit}
+          className="w-full py-2 text-xs text-gray-400 font-semibold"
+        >
+          Отмена
+        </button>
+
+      </form>
+    </div>
+  </div>
+)}
 
       {/* МОДАЛЬНОЕ ОКНО ЗАКУПОЧНОЙ ПАРТИИ */}
       {isBatchModalOpen && (
