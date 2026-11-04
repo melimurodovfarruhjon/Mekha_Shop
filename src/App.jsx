@@ -1134,6 +1134,10 @@ const removeBatchModel = (itemIndex) => {
                 onClick={() => {
                   setBatchItems([createEmptyBatchItem()]);
                   setBatchNotes('');
+                  setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
+                  setBatchNewProductTitle('');
+                  setBatchStep(1);
+                  setShowBatchVariants(false);
                   setIsBatchModalOpen(true);
                 }}
                 className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-[0.98]"
