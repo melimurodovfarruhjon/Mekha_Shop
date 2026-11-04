@@ -379,9 +379,14 @@ useEffect(() => {
   
   // ФОРМА НОВОЙ ЗАКУПОЧНОЙ ПАРТИИ
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
-  const [batchNotes, setBatchNotes] = useState('');
-  const [batchItems, setBatchItems] = useState([]);
-  const [batchSaving, setBatchSaving] = useState(false);
+ const [batchNotes, setBatchNotes] = useState('');
+ const [batchItems, setBatchItems] = useState([]);
+ const [batchSaving, setBatchSaving] = useState(false);
+
+  // ПОШАГОВОЕ ОФОРМЛЕНИЕ ПОСТАВКИ
+  const [batchStep, setBatchStep] = useState(1);
+  const [batchName, setBatchName] = useState('');
+  const [showBatchVariants, setShowBatchVariants] = useState(false);
 
   const createEmptyBatchItem = () => ({
     productId: '',
@@ -2448,6 +2453,9 @@ const removeBatchModel = (itemIndex) => {
               setIsQuickAddMenuOpen(false);
               setBatchItems([createEmptyBatchItem()]);
               setBatchNotes('');
+              setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
+              setBatchStep(1);
+              setShowBatchVariants(false);
               setIsBatchModalOpen(true);
             }}
             className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-rose-50"
