@@ -651,148 +651,184 @@ const removeBatchModel = (itemIndex) => {
   );
 };
 
-  const handleSavePurchaseBatch = async (e) => {
-    e.preventDefault();
+  
+const handleSavePurchaseBatch = async (e) => {
+  e.preventDefault();
 
-    if (batchSaving) return;
+  if (batchSaving) return;
 
-    if (batchItems.length === 0) {
+  if (batchItems.length === 0) {
+    setModalAlert({
+      title: 'Ошибка',
+      message: 'Добавьте хотя бы одну модель.',
+      type: 'error'
+    });
+    return;
+  }
+
+  const payloadItems = [];
+
+  for (const item of batchItems) {
+    const product = products.find(
+      p => String(p.id) === String(item.productId)
+    );
+
+    if (!product) {
       setModalAlert({
         title: 'Ошибка',
-        message: 'Добавьте хотя бы одну модель.',
+        message: 'Выберите модель из каталога.',
         type: 'error'
       });
       return;
     }
 
-    const payloadItems = [];
+    const quantity = Number(item.quantity);
 
-    for (const item of batchItems) {
-      const product = products.find(
-        p => String(p.id) === String(item.productId)
-      );
-
-      if (!product) {
-        setModalAlert({
-          title: 'Ошибка',
-          message: 'Выберите существующую модель из каталога.',
-          type: 'error'
-        });
-        return;
-      }
-
-      const quantity = Number(item.quantity);
-      const variantsTotal = item.variants.reduce(
-        (sum, variant) => sum + Number(variant.quantity || 0),
-        0
-      );
-
-      if (
-        !Number.isInteger(quantity) ||
-        quantity <= 0 ||
-        variantsTotal !== quantity
-      ) {
-        setModalAlert({
-          title: 'Проверьте количество',
-          message: `Количество вариантов модели «${product.title}» должно совпадать с общим количеством.`,
-          type: 'error'
-        });
-        return;
-      }
-
-      const wholesaleAmount = Number(item.wholesaleAmount);
-      const cargoAmount = Number(item.cargoAmount);
-      const salePrice = Number(item.salePriceTjs);
-
-      const wholesaleRate = getCurrencyRateToTJS(item.wholesaleCurrency);
-      const cargoRate = getCurrencyRateToTJS(item.cargoCurrency);
-
-      if (
-        item.wholesaleAmount === '' ||
-        item.cargoAmount === '' ||
-        item.salePriceTjs === '' ||
-        !Number.isFinite(wholesaleAmount) ||
-        !Number.isFinite(cargoAmount) ||
-        !Number.isFinite(salePrice) ||
-        wholesaleAmount < 0 ||
-        cargoAmount < 0 ||
-        salePrice < 0 ||
-        !Number.isFinite(wholesaleRate) ||
-        !Number.isFinite(cargoRate) ||
-        wholesaleRate <= 0 ||
-        cargoRate <= 0
-      ) {
-        setModalAlert({
-          title: 'Проверьте стоимость',
-          message: `Проверьте суммы, валюты и курсы для модели «${product.title}».`,
-          type: 'error'
-        });
-        return;
-      }
-
-      payloadItems.push({
-        legacyId: String(product.id),
-        title: product.title,
-        photo: null,
-        quantity,
-        wholesaleAmount: Number(item.wholesaleAmount),
-        wholesaleCurrency: item.wholesaleCurrency,
-        wholesaleRateToTjs: getCurrencyRateToTJS(item.wholesaleCurrency),
-        cargoAmount: Number(item.cargoAmount),
-        cargoCurrency: item.cargoCurrency,
-        cargoRateToTjs: getCurrencyRateToTJS(item.cargoCurrency),
-        salePriceTjs: Number(item.salePriceTjs),
-        variants: item.variants.map(variant => ({
-          color: variant.color,
-          size: variant.size,
-          quantity: Number(variant.quantity)
-        }))
-      });
-    }
-
-    setBatchSaving(true);
-
-    try {
-      const response = await fetch(
-        `${BACKEND_URL}/api/purchase-batches`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            notes: batchNotes,
-            items: payloadItems
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Не удалось сохранить партию');
-      }
-
-      setBatchItems([]);
-      setBatchNotes('');
-      setIsBatchModalOpen(false);
-
+    if (!Number.isInteger(quantity) || quantity <= 0) {
       setModalAlert({
-        title: 'Партия сохранена',
-        message: `Закупочная партия №${data.batchNumber} успешно зарегистрирована. Себестоимость рассчитана сервером.`,
-        type: 'success'
-      });
-
-    } catch (error) {
-      setModalAlert({
-        title: 'Ошибка сохранения',
-        message: error.message || 'Не удалось связаться с сервером.',
+        title: 'Проверьте количество',
+        message: 'Количество товара должно быть целым числом больше нуля.',
         type: 'error'
       });
-    } finally {
-      setBatchSaving(false);
+      return;
     }
-  };
+
+    // Если варианты не заполнены, создаём стандартный вариант.
+    const variants = item.variants?.length
+      ? item.variants
+      : [{
+          color: 'Без цвета',
+          size: 'Без размера',
+          quantity: String(quantity)
+        }];
+
+    const variantsTotal = variants.reduce(
+      (sum, variant) => sum + Number(variant.quantity || 0),
+      0
+    );
+
+    if (variantsTotal !== quantity) {
+      setModalAlert({
+        title: 'Проверьте варианты',
+        message: `Количество вариантов модели «${product.title}» должно совпадать с общим количеством.`,
+        type: 'error'
+      });
+      return;
+    }
+
+    const wholesaleAmount = Number(item.wholesaleAmount);
+    const cargoAmount = Number(item.cargoAmount);
+
+    // Цена продажи необязательна.
+    const salePrice = item.salePriceTjs === ''
+      ? 0
+      : Number(item.salePriceTjs);
+
+    const wholesaleRate = getCurrencyRateToTJS(
+      item.wholesaleCurrency
+    );
+
+    const cargoRate = getCurrencyRateToTJS(
+      item.cargoCurrency
+    );
+
+    if (
+      item.wholesaleAmount === '' ||
+      item.cargoAmount === '' ||
+      !Number.isFinite(wholesaleAmount) ||
+      !Number.isFinite(cargoAmount) ||
+      !Number.isFinite(salePrice) ||
+      wholesaleAmount < 0 ||
+      cargoAmount < 0 ||
+      salePrice < 0 ||
+      !Number.isFinite(wholesaleRate) ||
+      !Number.isFinite(cargoRate) ||
+      wholesaleRate <= 0 ||
+      cargoRate <= 0
+    ) {
+      setModalAlert({
+        title: 'Проверьте стоимость',
+        message: `Проверьте суммы, валюты и курсы для модели «${product.title}».`,
+        type: 'error'
+      });
+      return;
+    }
+
+    payloadItems.push({
+      legacyId: String(product.id),
+      title: product.title,
+      photo: null,
+      quantity,
+
+      wholesaleAmount,
+      wholesaleCurrency: item.wholesaleCurrency,
+      wholesaleRateToTjs: wholesaleRate,
+
+      cargoAmount,
+      cargoCurrency: item.cargoCurrency,
+      cargoRateToTjs: cargoRate,
+
+      salePriceTjs: salePrice,
+
+      variants: variants.map(variant => ({
+        color: variant.color?.trim() || 'Без цвета',
+        size: variant.size?.trim() || 'Без размера',
+        quantity: Number(variant.quantity)
+      }))
+    });
+  }
+
+  setBatchSaving(true);
+
+  try {
+    const response = await fetch(
+      `${BACKEND_URL}/api/purchase-batches`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          notes: batchName
+            ? `${batchName}${batchNotes ? `\n${batchNotes}` : ''}`
+            : batchNotes,
+          items: payloadItems
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error || 'Не удалось сохранить партию'
+      );
+    }
+
+    setBatchItems([]);
+    setBatchNotes('');
+    setBatchName('');
+    setBatchStep(1);
+    setShowBatchVariants(false);
+    setIsBatchModalOpen(false);
+
+    setModalAlert({
+      title: 'Партия сохранена',
+      message: `Закупочная партия №${data.batchNumber} успешно зарегистрирована.`,
+      type: 'success'
+    });
+
+  } catch (error) {
+    setModalAlert({
+      title: 'Ошибка сохранения',
+      message: error.message || 'Не удалось связаться с сервером.',
+      type: 'error'
+    });
+  } finally {
+    setBatchSaving(false);
+  }
+};
+
   
   const handleSubmitProduct = (e) => {
   e.preventDefault();
