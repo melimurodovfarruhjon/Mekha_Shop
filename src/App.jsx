@@ -388,6 +388,8 @@ useEffect(() => {
   const [batchName, setBatchName] = useState('');
   const [showBatchVariants, setShowBatchVariants] = useState(false);
   const [batchNewProductTitle, setBatchNewProductTitle] = useState('');
+  const [batchNewProductPhoto, setBatchNewProductPhoto] = useState('');
+  const [showBatchProductCreation, setShowBatchProductCreation] = useState(false);
 
   const createEmptyBatchItem = () => ({
     productId: '',
@@ -829,7 +831,48 @@ const handleSavePurchaseBatch = async (e) => {
   }
 };
 
-  
+  const handleCreateBatchProduct = () => {
+  const cleanTitle = batchNewProductTitle.trim();
+
+  if (!cleanTitle) {
+    setModalAlert({
+      title: 'Укажите название',
+      message: 'Введите название новой модели товара.',
+      type: 'error'
+    });
+    return;
+  }
+
+  const newProduct = {
+    id: Date.now(),
+    title: cleanTitle,
+    photo: batchNewProductPhoto ||
+      'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=400',
+    quantity: 0,
+    totalWholesale: 0,
+    wholesaleCurrency: 'CNY',
+    cargoCost: 0,
+    cargoCurrency: 'USD'
+  };
+
+  setProducts(prev => [newProduct, ...prev]);
+
+  setBatchItems(prev => {
+    const updated = [...prev];
+
+    updated[0] = {
+      ...updated[0],
+      productId: String(newProduct.id)
+    };
+
+    return updated;
+  });
+
+  setBatchNewProductTitle('');
+  setBatchNewProductPhoto('');
+  setShowBatchProductCreation(false);
+};  
+
   const handleSubmitProduct = (e) => {
   e.preventDefault();
 
@@ -1172,6 +1215,8 @@ const handleSavePurchaseBatch = async (e) => {
                   setBatchNotes('');
                   setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
                   setBatchNewProductTitle('');
+                  setBatchNewProductPhoto('');
+                  setShowBatchProductCreation(false);
                   setBatchStep(1);
                   setShowBatchVariants(false);
                   setIsBatchModalOpen(true);
@@ -2056,34 +2101,223 @@ const handleSavePurchaseBatch = async (e) => {
               )}
 
               {/* Временный экран следующего шага */}
-              {batchStep > 1 && (
-                <div className="space-y-4">
-                  <h3 className="font-bold">Следующий шаг</h3>
-                  <p className="text-sm text-gray-400">
-                    Здесь будет следующий этап оформления поставки.
+              {/* ШАГ 2 — ВЫБОР ТОВАРА */}
+{batchStep === 2 && (
+  <div className="space-y-4">
+
+    <div>
+      <h3 className="text-base font-bold">Выбор товара</h3>
+      <p className="text-xs text-gray-400 mt-1">
+        Выберите модель из каталога или создайте новую
+      </p>
+    </div>
+
+    {!showBatchProductCreation ? (
+      <>
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+
+          {products.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-5">
+              Каталог пока пуст
+            </p>
+          ) : (
+            products.map(product => (
+              <button
+                key={product.id}
+                type="button"
+                onClick={() => {
+                  setBatchItems(prev => {
+                    const updated = [...prev];
+                    updated[0] = {
+                      ...updated[0],
+                      productId: String(product.id)
+                    };
+                    return updated;
+                  });
+                }}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left ${
+                  String(batchItems[0]?.productId) === String(product.id)
+                    ? 'border-[#8B2635] bg-rose-50'
+                    : isDarkMode
+                      ? 'border-gray-700 bg-[#252525]'
+                      : 'border-gray-200 bg-white'
+                }`}
+              >
+                <img
+                  src={product.photo}
+                  alt={product.title}
+                  className="w-12 h-12 rounded-lg object-cover"
+                />
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">
+                    {product.title}
                   </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setBatchStep(prev => prev - 1)}
-                      className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
-                        isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
-                      }`}
-                    >
-                      Назад
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setBatchStep(1)}
-                      className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold"
-                    >
-                      К первому шагу
-                    </button>
-                  </div>
+                  <p className="text-xs text-gray-400">
+                    Остаток: {product.quantity || 0} шт.
+                  </p>
                 </div>
-              )}
+
+                {String(batchItems[0]?.productId) === String(product.id) && (
+                  <Check size={18} className="text-[#8B2635]" />
+                )}
+              </button>
+            ))
+          )}
+
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowBatchProductCreation(true)}
+          className={`w-full border border-dashed rounded-xl p-4 flex items-center justify-center gap-2 text-sm font-semibold ${
+            isDarkMode
+              ? 'border-gray-600 text-rose-300'
+              : 'border-rose-300 text-[#8B2635]'
+          }`}
+        >
+          <PlusCircle size={18} />
+          Создать новую модель
+        </button>
+      </>
+    ) : (
+      <div className="space-y-3">
+
+        <div>
+          <label className="block text-xs font-semibold mb-2">
+            Название модели
+          </label>
+
+          <input
+            type="text"
+            value={batchNewProductTitle}
+            onChange={e => setBatchNewProductTitle(e.target.value)}
+            placeholder="Например: Кроссовки белые"
+            maxLength={100}
+            className={batchInputClass}
+          />
+        </div>
+
+        <div>
+  <label className="block text-xs font-semibold mb-2">
+    Фотография товара
+  </label>
+
+  <label
+    className={`relative flex flex-col items-center justify-center w-full min-h-36 rounded-2xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${
+      isDarkMode
+        ? 'border-gray-600 bg-[#252525] hover:border-rose-400'
+        : 'border-rose-200 bg-rose-50 hover:border-[#8B2635]'
+    }`}
+  >
+    <input
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={e => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+          setModalAlert({
+            title: 'Неверный формат',
+            message: 'Выберите файл изображения.',
+            type: 'error'
+          });
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          setBatchNewProductPhoto(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }}
+    />
+
+    {batchNewProductPhoto ? (
+      <>
+        <img
+          src={batchNewProductPhoto}
+          alt="Фото товара"
+          className="w-full h-40 object-contain"
+        />
+
+        <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-3 py-1.5 rounded-lg">
+          Изменить фото
+        </span>
+      </>
+    ) : (
+      <div className="flex flex-col items-center py-6 px-4 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center mb-3">
+          <ImageIcon size={23} className="text-[#8B2635]" />
+        </div>
+
+        <p className="text-sm font-bold">
+          Добавить фотографию
+        </p>
+
+        <p className="text-[11px] text-gray-400 mt-1">
+          Нажмите, чтобы выбрать из галереи
+        </p>
+
+        <p className="text-[10px] text-gray-400 mt-2">
+          JPG, PNG или WEBP
+        </p>
+      </div>
+    )}
+  </label>
+
+  <p className="text-[10px] text-gray-400 mt-2">
+    Фотография необязательна. Её можно добавить позже.
+  </p>
+</div>
+
+        <button
+          type="button"
+          disabled={!batchNewProductTitle.trim()}
+          onClick={handleCreateBatchProduct}
+          className="w-full bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-40"
+        >
+          Создать и выбрать модель
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowBatchProductCreation(false)}
+          className="w-full py-2 text-xs text-gray-400 font-semibold"
+        >
+          Назад к каталогу
+        </button>
+
+      </div>
+    )}
+
+    <div className="flex gap-2 pt-2">
+
+      <button
+        type="button"
+        onClick={() => setBatchStep(1)}
+        className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
+          isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
+        }`}
+      >
+        Назад
+      </button>
+
+      <button
+        type="button"
+        disabled={!batchItems[0]?.productId}
+        onClick={() => setBatchStep(3)}
+        className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-40"
+      >
+        Далее
+      </button>
+
+    </div>
+
+  </div>
+)}
 
             </div>
           </div>
