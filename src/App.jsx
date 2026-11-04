@@ -387,6 +387,7 @@ useEffect(() => {
   const [batchStep, setBatchStep] = useState(1);
   const [batchName, setBatchName] = useState('');
   const [showBatchVariants, setShowBatchVariants] = useState(false);
+  const [batchNewProductTitle, setBatchNewProductTitle] = useState('');
 
   const createEmptyBatchItem = () => ({
     productId: '',
@@ -2454,6 +2455,7 @@ const removeBatchModel = (itemIndex) => {
               setBatchItems([createEmptyBatchItem()]);
               setBatchNotes('');
               setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
+              setBatchNewProductTitle('');
               setBatchStep(1);
               setShowBatchVariants(false);
               setIsBatchModalOpen(true);
