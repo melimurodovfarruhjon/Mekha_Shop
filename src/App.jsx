@@ -655,7 +655,7 @@ const removeBatchModel = (itemIndex) => {
 
   
 const handleSavePurchaseBatch = async (e) => {
-  e.preventDefault();
+  e?.preventDefault?.();
 
   if (batchSaving) return;
 
@@ -2012,7 +2012,7 @@ const handleSavePurchaseBatch = async (e) => {
         {/* МОДАЛЬНОЕ ОКНО ПОШАГОВОЙ ПОСТАВКИ */}
         {isBatchModalOpen && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className={`w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-6 ${
+            <div className={`w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl space-y-6 ${
               isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
             }`}>
 
@@ -2576,6 +2576,438 @@ const handleSavePurchaseBatch = async (e) => {
     </div>
   );
 })()}
+
+
+{/* ШАГ 4 — РАСХОДЫ */}
+{batchStep === 4 && batchItems[0] && (() => {
+  const item = batchItems[0];
+
+  const wholesale = item.wholesaleAmount;
+  const cargo = item.cargoAmount;
+
+  const validAmounts =
+    wholesale !== '' &&
+    cargo !== '' &&
+    Number.isFinite(Number(wholesale)) &&
+    Number.isFinite(Number(cargo)) &&
+    Number(wholesale) >= 0 &&
+    Number(cargo) >= 0;
+
+  const unitCost = calculateBatchItemCost(item);
+
+  const updateField = (field, value) => {
+    updateBatchItem(0, field, value);
+  };
+
+  return (
+    <div className="space-y-5">
+
+      <div>
+        <h3 className="text-base font-bold">Расходы на закупку</h3>
+        <p className="text-xs text-gray-400 mt-1">
+          Укажите стоимость товара и доставки
+        </p>
+      </div>
+
+
+{/* ЗАКУПОЧНАЯ СУММА */}
+<div className="space-y-2">
+  <label className="block text-xs font-semibold">
+    Общая сумма закупки
+  </label>
+
+  <div className={`flex items-center border rounded-xl overflow-hidden ${
+    isDarkMode ? 'border-gray-700 bg-[#2A2A2A]' : 'border-gray-200 bg-white'
+  }`}>
+    <input
+      type="number"
+      min="0"
+      step="0.01"
+      value={item.wholesaleAmount}
+      onChange={e => updateField('wholesaleAmount', e.target.value)}
+      placeholder="Например, 500"
+      className="flex-1 min-w-0 px-3 py-3 text-sm outline-none bg-transparent"
+    />
+
+    <div className="flex items-center gap-1 p-1">
+      {['CNY', 'USD', 'TJS'].map(currency => (
+        <button
+          key={currency}
+          type="button"
+          onClick={() => updateField('wholesaleCurrency', currency)}
+          className={`px-2.5 py-2 rounded-lg text-[10px] font-bold transition-colors ${
+            item.wholesaleCurrency === currency
+              ? 'bg-[#58111A] text-white'
+              : isDarkMode
+                ? 'text-gray-400'
+                : 'text-gray-500'
+          }`}
+        >
+          {currency}
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
+
+
+      
+{/* КАРГО */}
+<div className="space-y-2">
+  <label className="block text-xs font-semibold">
+    Стоимость карго
+  </label>
+
+  <div className={`flex items-center border rounded-xl overflow-hidden ${
+    isDarkMode ? 'border-gray-700 bg-[#2A2A2A]' : 'border-gray-200 bg-white'
+  }`}>
+    <input
+      type="number"
+      min="0"
+      step="0.01"
+      value={item.cargoAmount}
+      onChange={e => updateField('cargoAmount', e.target.value)}
+      placeholder="Например, 100"
+      className="flex-1 min-w-0 px-3 py-3 text-sm outline-none bg-transparent"
+    />
+
+    <div className="flex items-center gap-1 p-1">
+      {['CNY', 'USD', 'TJS'].map(currency => (
+        <button
+          key={currency}
+          type="button"
+          onClick={() => updateField('cargoCurrency', currency)}
+          className={`px-2.5 py-2 rounded-lg text-[10px] font-bold transition-colors ${
+            item.cargoCurrency === currency
+              ? 'bg-[#58111A] text-white'
+              : isDarkMode
+                ? 'text-gray-400'
+                : 'text-gray-500'
+          }`}
+        >
+          {currency}
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
+
+
+      {/* ЦЕНА ПРОДАЖИ */}
+      <div className="space-y-2">
+        <label className="block text-xs font-semibold">
+          Цена продажи за 1 штуку
+          <span className="text-gray-400 font-normal"> — необязательно</span>
+        </label>
+
+        <div className="relative">
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={item.salePriceTjs}
+            onChange={e =>
+              updateField('salePriceTjs', e.target.value)
+            }
+            placeholder="Например, 250"
+            className={batchInputClass}
+          />
+
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+            TJS
+          </span>
+        </div>
+      </div>
+
+      {/* РАСЧЁТ СЕБЕСТОИМОСТИ */}
+      <div className={`rounded-2xl p-4 space-y-3 ${
+        isDarkMode
+          ? 'bg-[#252525] border border-gray-700'
+          : 'bg-rose-50 border border-rose-100'
+      }`}>
+
+        <div>
+          <p className="text-xs text-gray-500">
+            Себестоимость одной единицы
+          </p>
+
+          <p className="text-2xl font-bold text-[#8B2635] mt-1">
+            {validAmounts ? unitCost.toFixed(2) : '—'} сомони
+          </p>
+        </div>
+
+        <div className="border-t border-gray-300/40 pt-3 space-y-1.5 text-xs">
+          <div className="flex justify-between">
+            <span className="text-gray-500">Курс USD → TJS</span>
+            <span className="font-semibold">
+              {Number(rates.USD_TJS).toFixed(3)}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-gray-500">Количество</span>
+            <span className="font-semibold">
+              {item.quantity} шт.
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-gray-500">Общие расходы в сомони</span>
+            <span className="font-semibold">
+              {validAmounts
+                ? (
+                    unitCost * Number(item.quantity)
+                  ).toFixed(2)
+                : '—'} TJS
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* НАВИГАЦИЯ */}
+      <div className="flex gap-2 pt-2">
+
+        <button
+          type="button"
+          onClick={() => setBatchStep(3)}
+          className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
+            isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
+          }`}
+        >
+          Назад
+        </button>
+
+        <button
+          type="button"
+          disabled={!validAmounts}
+          onClick={() => setBatchStep(5)}
+          className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-40"
+        >
+          Далее
+        </button>
+
+      </div>
+
+    </div>
+  );
+})()}
+
+
+
+{/* ШАГ 5 — ПРОВЕРКА ПОСТАВКИ */}
+{batchStep === 5 && batchItems[0] && (() => {
+  const item = batchItems[0];
+
+  const product = products.find(
+    p => String(p.id) === String(item.productId)
+  );
+
+  const quantity = Number(item.quantity) || 0;
+  const wholesale = Number(item.wholesaleAmount) || 0;
+  const cargo = Number(item.cargoAmount) || 0;
+  const unitCost = calculateBatchItemCost(item);
+  const totalCost = unitCost * quantity;
+
+  const variants = showBatchVariants
+    ? item.variants || []
+    : [{
+        color: 'Без цвета',
+        size: 'Без размера',
+        quantity: String(quantity)
+      }];
+
+  const formatMoney = (amount, currency) => {
+    const symbols = {
+      CNY: '¥',
+      USD: '$',
+      TJS: 'SM'
+    };
+
+    return `${amount} ${symbols[currency] || currency}`;
+  };
+
+  return (
+    <div className="space-y-5">
+
+      <div>
+        <h3 className="text-base font-bold">
+          Проверьте поставку
+        </h3>
+        <p className="text-xs text-gray-400 mt-1">
+          Убедитесь, что все данные указаны правильно
+        </p>
+      </div>
+
+      {/* НАЗВАНИЕ */}
+      <div className={`rounded-xl p-3 ${
+        isDarkMode ? 'bg-[#252525]' : 'bg-gray-50'
+      }`}>
+        <p className="text-[11px] text-gray-400">
+          Название поставки
+        </p>
+        <p className="text-sm font-bold mt-1">
+          {batchName}
+        </p>
+      </div>
+
+      {/* ТОВАР */}
+      <div>
+        <p className="text-xs font-bold mb-2">
+          Товар
+        </p>
+
+        <div className={`flex items-center gap-3 rounded-xl border p-3 ${
+          isDarkMode ? 'border-gray-700' : 'border-gray-200'
+        }`}>
+          <img
+            src={product?.photo}
+            alt={product?.title || 'Товар'}
+            className="w-14 h-14 rounded-xl object-cover"
+          />
+
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">
+              {product?.title || 'Товар не найден'}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Количество: {quantity} шт.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ВАРИАНТЫ */}
+      <div className="space-y-2">
+        <p className="text-xs font-bold">
+          Распределение товара
+        </p>
+
+        {variants.map((variant, index) => (
+          <div
+            key={index}
+            className={`flex justify-between items-center rounded-lg p-3 text-xs ${
+              isDarkMode ? 'bg-[#252525]' : 'bg-gray-50'
+            }`}
+          >
+            <span>
+              {variant.color} / {variant.size}
+            </span>
+            <span className="font-bold">
+              {variant.quantity} шт.
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* РАСХОДЫ */}
+      <div>
+        <p className="text-xs font-bold mb-2">
+          Финансы
+        </p>
+
+        <div className={`rounded-xl p-3 space-y-3 ${
+          isDarkMode ? 'bg-[#252525]' : 'bg-gray-50'
+        }`}>
+
+          <div className="flex justify-between text-xs gap-3">
+            <span className="text-gray-400">
+              Закупка
+            </span>
+            <span className="font-semibold">
+              {formatMoney(wholesale, item.wholesaleCurrency)}
+            </span>
+          </div>
+
+          <div className="flex justify-between text-xs gap-3">
+            <span className="text-gray-400">
+              Карго
+            </span>
+            <span className="font-semibold">
+              {formatMoney(cargo, item.cargoCurrency)}
+            </span>
+          </div>
+
+          <div className="flex justify-between text-xs gap-3">
+            <span className="text-gray-400">
+              Цена продажи за штуку
+            </span>
+            <span className="font-semibold">
+              {item.salePriceTjs === ''
+                ? 'Не указана'
+                : `${Number(item.salePriceTjs).toFixed(2)} TJS`}
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ИТОГ */}
+      <div className={`rounded-2xl p-4 space-y-3 ${
+        isDarkMode
+          ? 'bg-[#252525] border border-gray-700'
+          : 'bg-rose-50 border border-rose-100'
+      }`}>
+        <div>
+          <p className="text-xs text-gray-500">
+            Общие расходы
+          </p>
+          <p className="text-xl font-bold text-[#8B2635] mt-1">
+            {totalCost.toFixed(2)} сомони
+          </p>
+        </div>
+
+        <div className="border-t border-gray-300/40 pt-3">
+          <p className="text-xs text-gray-500">
+            Себестоимость одной единицы
+          </p>
+          <p className="text-lg font-bold mt-1">
+            {unitCost.toFixed(2)} сомони
+          </p>
+        </div>
+      </div>
+
+      {/* ПРЕДУПРЕЖДЕНИЕ */}
+      <div className="rounded-xl bg-amber-50 text-amber-800 p-3 text-xs">
+        После подтверждения закупочная партия будет отправлена
+        на сервер и зарегистрирована в системе.
+      </div>
+
+      {/* КНОПКИ */}
+      <div className="flex gap-2 pt-2">
+
+        <button
+          type="button"
+          disabled={batchSaving}
+          onClick={() => setBatchStep(4)}
+          className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
+            isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
+          }`}
+        >
+          Назад
+        </button>
+
+        <button
+          type="button"
+          disabled={batchSaving || !product}
+          onClick={() => handleSavePurchaseBatch()}
+          className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {batchSaving ? (
+            'Сохранение...'
+          ) : (
+            <>
+              <Check size={16} />
+              Принять на склад
+            </>
+          )}
+        </button>
+
+      </div>
+
+    </div>
+  );
+})()}
+
 
 
             </div>
