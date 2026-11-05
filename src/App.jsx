@@ -3268,7 +3268,7 @@ const handleSavePurchaseBatch = async (e) => {
         <button 
           onClick={() => setActiveTab('home')} 
           className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
-            activeTab === 'courier'
+            activeTab === 'home'
               ? '-translate-y-2 text-rose-500 font-bold'
               : 'translate-y-0 text-gray-400'
           }`}
@@ -3280,7 +3280,7 @@ const handleSavePurchaseBatch = async (e) => {
         <button 
           onClick={() => setActiveTab('products')} 
           className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
-            activeTab === 'courier'
+            activeTab === 'products'
               ? '-translate-y-2 text-rose-500 font-bold'
               : 'translate-y-0 text-gray-400'
           }`}
@@ -3314,7 +3314,7 @@ const handleSavePurchaseBatch = async (e) => {
         <button 
           onClick={() => setActiveTab('calc')} 
           className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
-            activeTab === 'courier'
+            activeTab === 'calc'
               ? '-translate-y-2 text-rose-500 font-bold'
               : 'translate-y-0 text-gray-400'
           }`}
