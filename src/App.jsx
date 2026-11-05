@@ -1274,15 +1274,26 @@ const handleSavePurchaseBatch = async (e) => {
     }`}>
       
       <style>{`
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        input[type=number] {
-          -moz-appearance: textfield;
-        }
-      `}</style>
+  html, body, #root {
+    min-height: 100%;
+    background-color: ${isDarkMode ? '#121212' : '#FAF8F5'};
+  }
+
+  html, body {
+    margin: 0;
+    overscroll-behavior-y: none;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
+`}</style>
 
       {/* Шапка */}
       <header className="bg-[#58111A] text-white p-4 sticky top-0 z-20 shadow-md flex justify-between items-center">
