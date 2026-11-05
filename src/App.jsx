@@ -1265,7 +1265,7 @@ const handleSavePurchaseBatch = async (e) => {
 
       {/* Основной контент */}
        <main
-         className="flex-1 p-3 pb-24 overflow-y-auto overflow-x-hidden touch-pan-y"
+         className="flex-1 p-3 pb-24 space-y-4 overflow-y-auto touch-pan-y"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -1280,8 +1280,7 @@ const handleSavePurchaseBatch = async (e) => {
         >
 
         {/* ЭКРАН 1 — ГЛАВНАЯ */}
-          <section className="w-1/4 flex-none">
-          <>
+          {activeTab === 'home' && (
 
           <div className="space-y-4">
             
@@ -1385,8 +1384,7 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
           </div>
-        </>
-       </section>
+        )}
 
         {/* ТОВАРЫ */}
         {activeTab === 'products' && (
