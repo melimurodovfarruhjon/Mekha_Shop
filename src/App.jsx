@@ -1281,7 +1281,7 @@ const handleSavePurchaseBatch = async (e) => {
 
         {/* ЭКРАН 1 — ГЛАВНАЯ */}
           <section className="w-1/4 flex-none">
-          {activeTab === 'home' && (
+          <>
 
           <div className="space-y-4">
             
@@ -1385,7 +1385,7 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
           </div>
-        )}
+        </>
        </section>
 
         {/* ТОВАРЫ */}
