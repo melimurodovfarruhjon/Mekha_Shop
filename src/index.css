@@ -1,1 +1,38 @@
 @import "tailwindcss";
+
+@keyframes tabSlideNext {
+  from {
+    transform: translateX(45px);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes tabSlidePrev {
+  from {
+    transform: translateX(-45px);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.tab-slide-next {
+  animation: tabSlideNext 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tab-slide-prev {
+  animation: tabSlidePrev 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-slide-next,
+  .tab-slide-prev {
+    animation: none;
+  }
+}

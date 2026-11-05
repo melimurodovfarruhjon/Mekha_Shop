@@ -70,6 +70,8 @@ export default function App() {
   return allowedTabs.includes(savedTab) ? savedTab : 'home';
 });
 
+const [swipeDirection, setSwipeDirection] = useState('next');
+
 // Свайп между разделами
 const swipeStart = useRef(null);
 
