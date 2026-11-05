@@ -3212,27 +3212,35 @@ const handleSavePurchaseBatch = async (e) => {
 
 
       {/* Нижняя навигация */}
-      <nav className={`flex justify-around items-center border-t h-16 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20 shadow-lg px-2 transition-colors ${
+      <nav className={`flex justify-around items-center border-t h-20 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20 shadow-lg px-2 transition-colors ${
         isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
       }`}>
         <button 
           onClick={() => setActiveTab('home')} 
-          className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'home' ? 'text-rose-400 font-bold' : 'text-gray-400'}`}
+          className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
+            activeTab === 'home'
+              ? '-translate-y-2 text-rose-500 font-bold'
+              : 'translate-y-0 text-gray-400'
+          }`}
         >
-          <Home size={18} />
+          <Home size={21} />
           <span className="text-[10px] mt-1">Главная</span>
         </button>
 
         <button 
           onClick={() => setActiveTab('products')} 
-          className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'products' ? 'text-rose-400 font-bold' : 'text-gray-400'}`}
+          className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
+            activeTab === 'home'
+              ? '-translate-y-2 text-rose-500 font-bold'
+              : 'translate-y-0 text-gray-400'
+          }`}
         >
-          <ShoppingBag size={18} />
+          <ShoppingBag size={21} />
           <span className="text-[10px] mt-1">Товары</span>
         </button>
 
         {/* ЦЕНТРАЛЬНАЯ КНОПКА + */}
-        <div className="flex-1 flex justify-center -mt-5">
+        <div className="flex-1 flex justify-center -mt-6">
           <button
             type="button"
               onClick={() => {
@@ -3249,23 +3257,31 @@ const handleSavePurchaseBatch = async (e) => {
               isDarkMode ? 'border-[#121212]' : 'border-[#FAF8F5]'
             }`}
           >
-            {isQuickAddMenuOpen ? <X size={22} /> : <Plus size={22} />}
+            {isQuickAddMenuOpen ? <X size={40} /> : <Plus size={30} />}
           </button>
         </div>
 
         <button 
           onClick={() => setActiveTab('calc')} 
-          className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'calc' ? 'text-rose-400 font-bold' : 'text-gray-400'}`}
+          className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
+          activeTab === 'home'
+            ? '-translate-y-2 text-rose-500 font-bold'
+            : 'translate-y-0 text-gray-400'
+        }`}
         >
-          <Calculator size={18} />
+          <Calculator size={21} />
           <span className="text-[10px] mt-1">Расчет</span>
         </button>
 
         <button 
           onClick={() => setActiveTab('courier')} 
-          className={`flex flex-col items-center flex-1 py-1 transition-colors ${activeTab === 'courier' ? 'text-rose-400 font-bold' : 'text-gray-400'}`}
+          className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
+            activeTab === 'courier'
+              ? '-translate-y-2 text-rose-500 font-bold'
+              : 'translate-y-0 text-gray-400'
+          }`}
         >
-          <Truck size={18} />
+          <Truck size={21} />
           <span className="text-[10px] mt-1">Курьер</span>
         </button>
       </nav>
