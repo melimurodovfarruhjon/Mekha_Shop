@@ -2391,12 +2391,17 @@ const handleSavePurchaseBatch = async (e) => {
                 type="button"
                 onClick={() => {
                   setBatchItems(prev => {
-                    const exists = prev.some(
+                    // Убираем пустые позиции
+                    const selectedItems = prev.filter(
+                      item => item.productId
+                    );
+
+                    const exists = selectedItems.some(
                       item => String(item.productId) === String(product.id)
                     );
 
                     if (exists) {
-                      return prev.filter(
+                      return selectedItems.filter(
                         item => String(item.productId) !== String(product.id)
                       );
                     }
@@ -2404,7 +2409,7 @@ const handleSavePurchaseBatch = async (e) => {
                     const newItem = createEmptyBatchItem();
                     newItem.productId = String(product.id);
 
-                    return [...prev, newItem];
+                    return [...selectedItems, newItem];
                   });
                 }}
 
@@ -2433,7 +2438,9 @@ const handleSavePurchaseBatch = async (e) => {
                   </p>
                 </div>
 
-                {String(batchItems[0]?.productId) === String(product.id) && (
+                {batchItems.some(
+                 item => String(item.productId) === String(product.id)
+                  ) && (
                   <Check size={18} className="text-[#8B2635]" />
                 )}
               </button>
@@ -2582,7 +2589,7 @@ const handleSavePurchaseBatch = async (e) => {
 
       <button
         type="button"
-        disabled={!batchItems[0]?.productId}
+        disabled={!batchItems.some(item => item.productId)}
         onClick={() => setBatchStep(3)}
         className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-40"
       >
@@ -2874,194 +2881,254 @@ const handleSavePurchaseBatch = async (e) => {
 
 
 {/* ШАГ 4 — РАСХОДЫ */}
-{batchStep === 4 && batchItems[0] && (() => {
-  const item = batchItems[0];
 
-  const wholesale = item.wholesaleAmount;
-  const cargo = item.cargoAmount;
+{batchStep === 4 && batchItems.length > 0 && (() => {
+  const allItemsValid = batchItems.every(item =>
+    item.wholesaleAmount !== '' &&
+    item.cargoAmount !== '' &&
+    Number.isFinite(Number(item.wholesaleAmount)) &&
+    Number.isFinite(Number(item.cargoAmount)) &&
+    Number(item.wholesaleAmount) >= 0 &&
+    Number(item.cargoAmount) >= 0
+  );
 
-  const validAmounts =
-    wholesale !== '' &&
-    cargo !== '' &&
-    Number.isFinite(Number(wholesale)) &&
-    Number.isFinite(Number(cargo)) &&
-    Number(wholesale) >= 0 &&
-    Number(cargo) >= 0;
-
-  const unitCost = calculateBatchItemCost(item);
-
-  const updateField = (field, value) => {
-    updateBatchItem(0, field, value);
-  };
+  const totalCost = batchItems.reduce(
+    (sum, item) =>
+      sum + calculateBatchItemCost(item) * Number(item.quantity),
+    0
+  );
 
   return (
     <div className="space-y-5">
-
       <div>
-        <h3 className="text-base font-bold">Расходы на закупку</h3>
+        <h3 className="text-base font-bold">
+          Расходы на закупку
+        </h3>
         <p className="text-xs text-gray-400 mt-1">
-          Укажите стоимость товара и доставки
+          Укажите закупочную стоимость и карго для каждой модели
         </p>
       </div>
 
+      {batchItems.map((item, itemIndex) => {
+        const product = products.find(
+          p => String(p.id) === String(item.productId)
+        );
 
-{/* ЗАКУПОЧНАЯ СУММА */}
-<div className="space-y-2">
-  <label className="block text-xs font-semibold">
-    Общая сумма закупки
-  </label>
+        const validAmounts =
+          item.wholesaleAmount !== '' &&
+          item.cargoAmount !== '' &&
+          Number.isFinite(Number(item.wholesaleAmount)) &&
+          Number.isFinite(Number(item.cargoAmount)) &&
+          Number(item.wholesaleAmount) >= 0 &&
+          Number(item.cargoAmount) >= 0;
 
-  <div className={`flex items-center border rounded-xl overflow-hidden ${
-    isDarkMode ? 'border-gray-700 bg-[#2A2A2A]' : 'border-gray-200 bg-white'
-  }`}>
-    <input
-      type="number"
-      min="0"
-      step="0.01"
-      value={item.wholesaleAmount}
-      onChange={e => updateField('wholesaleAmount', e.target.value)}
-      placeholder="Например, 500"
-      className="flex-1 min-w-0 px-3 py-3 text-sm outline-none bg-transparent"
-    />
+        const unitCost = calculateBatchItemCost(item);
 
-    <div className="flex items-center gap-1 p-1">
-      {['CNY', 'USD', 'TJS'].map(currency => (
-        <button
-          key={currency}
-          type="button"
-          onClick={() => updateField('wholesaleCurrency', currency)}
-          className={`px-2.5 py-2 rounded-lg text-[10px] font-bold transition-colors ${
-            item.wholesaleCurrency === currency
-              ? 'bg-[#58111A] text-white'
-              : isDarkMode
-                ? 'text-gray-400'
-                : 'text-gray-500'
-          }`}
-        >
-          {currency}
-        </button>
-      ))}
-    </div>
-  </div>
-</div>
+        const updateField = (field, value) => {
+          updateBatchItem(itemIndex, field, value);
+        };
 
+        return (
+          <div
+            key={`${item.productId}-${itemIndex}`}
+            className={`rounded-2xl border p-4 space-y-5 ${
+              isDarkMode
+                ? 'border-gray-700 bg-[#252525]'
+                : 'border-gray-200 bg-gray-50'
+            }`}
+          >
+            <div>
+              <p className="text-xs text-gray-400">
+                Модель {itemIndex + 1}
+              </p>
+              <h4 className="font-bold text-sm mt-1">
+                {product?.title || 'Товар'}
+              </h4>
+              <p className="text-xs text-gray-400 mt-1">
+                Количество: {item.quantity} шт.
+              </p>
+            </div>
 
-      
-{/* КАРГО */}
-<div className="space-y-2">
-  <label className="block text-xs font-semibold">
-    Стоимость карго
-  </label>
+            {/* ЗАКУПОЧНАЯ СУММА */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold">
+                Общая сумма закупки
+              </label>
 
-  <div className={`flex items-center border rounded-xl overflow-hidden ${
-    isDarkMode ? 'border-gray-700 bg-[#2A2A2A]' : 'border-gray-200 bg-white'
-  }`}>
-    <input
-      type="number"
-      min="0"
-      step="0.01"
-      value={item.cargoAmount}
-      onChange={e => updateField('cargoAmount', e.target.value)}
-      placeholder="Например, 100"
-      className="flex-1 min-w-0 px-3 py-3 text-sm outline-none bg-transparent"
-    />
+              <div className={`flex items-center border rounded-xl overflow-hidden ${
+                isDarkMode
+                  ? 'border-gray-700 bg-[#2A2A2A]'
+                  : 'border-gray-200 bg-white'
+              }`}>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.wholesaleAmount}
+                  onChange={e =>
+                    updateField('wholesaleAmount', e.target.value)
+                  }
+                  placeholder="Например, 500"
+                  className="flex-1 min-w-0 px-3 py-3 text-sm outline-none bg-transparent"
+                />
 
-    <div className="flex items-center gap-1 p-1">
-      {['CNY', 'USD', 'TJS'].map(currency => (
-        <button
-          key={currency}
-          type="button"
-          onClick={() => updateField('cargoCurrency', currency)}
-          className={`px-2.5 py-2 rounded-lg text-[10px] font-bold transition-colors ${
-            item.cargoCurrency === currency
-              ? 'bg-[#58111A] text-white'
-              : isDarkMode
-                ? 'text-gray-400'
-                : 'text-gray-500'
-          }`}
-        >
-          {currency}
-        </button>
-      ))}
-    </div>
-  </div>
-</div>
+                <div className="flex items-center gap-1 p-1">
+                  {['CNY', 'USD', 'TJS'].map(currency => (
+                    <button
+                      key={currency}
+                      type="button"
+                      onClick={() =>
+                        updateField('wholesaleCurrency', currency)
+                      }
+                      className={`px-2.5 py-2 rounded-lg text-[10px] font-bold ${
+                        item.wholesaleCurrency === currency
+                          ? 'bg-[#58111A] text-white'
+                          : isDarkMode
+                            ? 'text-gray-400'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      {currency}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
+            {/* КАРГО */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold">
+                Стоимость карго для этой модели
+              </label>
 
-      {/* ЦЕНА ПРОДАЖИ */}
-      <div className="space-y-2">
-        <label className="block text-xs font-semibold">
-          Цена продажи за 1 штуку
-          <span className="text-gray-400 font-normal"> — необязательно</span>
-        </label>
+              <div className={`flex items-center border rounded-xl overflow-hidden ${
+                isDarkMode
+                  ? 'border-gray-700 bg-[#2A2A2A]'
+                  : 'border-gray-200 bg-white'
+              }`}>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.cargoAmount}
+                  onChange={e =>
+                    updateField('cargoAmount', e.target.value)
+                  }
+                  placeholder="Например, 100"
+                  className="flex-1 min-w-0 px-3 py-3 text-sm outline-none bg-transparent"
+                />
 
-        <div className="relative">
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={item.salePriceTjs}
-            onChange={e =>
-              updateField('salePriceTjs', e.target.value)
-            }
-            placeholder="Например, 250"
-            className={batchInputClass}
-          />
+                <div className="flex items-center gap-1 p-1">
+                  {['CNY', 'USD', 'TJS'].map(currency => (
+                    <button
+                      key={currency}
+                      type="button"
+                      onClick={() =>
+                        updateField('cargoCurrency', currency)
+                      }
+                      className={`px-2.5 py-2 rounded-lg text-[10px] font-bold ${
+                        item.cargoCurrency === currency
+                          ? 'bg-[#58111A] text-white'
+                          : isDarkMode
+                            ? 'text-gray-400'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      {currency}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-            TJS
-          </span>
-        </div>
-      </div>
+            {/* ЦЕНА ПРОДАЖИ */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold">
+                Цена продажи за 1 штуку
+                <span className="text-gray-400 font-normal">
+                  {' '}— необязательно
+                </span>
+              </label>
 
-      {/* РАСЧЁТ СЕБЕСТОИМОСТИ */}
-      <div className={`rounded-2xl p-4 space-y-3 ${
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.salePriceTjs}
+                  onChange={e =>
+                    updateField('salePriceTjs', e.target.value)
+                  }
+                  placeholder="Например, 250"
+                  className={batchInputClass}
+                />
+
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                  TJS
+                </span>
+              </div>
+            </div>
+
+            {/* СЕБЕСТОИМОСТЬ */}
+            <div className={`rounded-xl p-4 space-y-3 ${
+              isDarkMode
+                ? 'bg-[#1E1E1E] border border-gray-700'
+                : 'bg-rose-50 border border-rose-100'
+            }`}>
+              <div>
+                <p className="text-xs text-gray-500">
+                  Себестоимость одной единицы
+                </p>
+                <p className="text-2xl font-bold text-[#8B2635] mt-1">
+                  {validAmounts
+                    ? unitCost.toFixed(2)
+                    : '—'} сомони
+                </p>
+              </div>
+
+              <div className="border-t border-gray-300/40 pt-3 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">
+                    Количество
+                  </span>
+                  <span className="font-semibold">
+                    {item.quantity} шт.
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-500">
+                    Общие расходы модели
+                  </span>
+                  <span className="font-semibold">
+                    {validAmounts
+                      ? (unitCost * Number(item.quantity)).toFixed(2)
+                      : '—'} TJS
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* ОБЩАЯ СУММА */}
+      <div className={`rounded-2xl p-4 ${
         isDarkMode
-          ? 'bg-[#252525] border border-gray-700'
-          : 'bg-rose-50 border border-rose-100'
+          ? 'bg-[#303030]'
+          : 'bg-gray-100'
       }`}>
-
-        <div>
-          <p className="text-xs text-gray-500">
-            Себестоимость одной единицы
-          </p>
-
-          <p className="text-2xl font-bold text-[#8B2635] mt-1">
-            {validAmounts ? unitCost.toFixed(2) : '—'} сомони
-          </p>
-        </div>
-
-        <div className="border-t border-gray-300/40 pt-3 space-y-1.5 text-xs">
-          <div className="flex justify-between">
-            <span className="text-gray-500">Курс USD → TJS</span>
-            <span className="font-semibold">
-              {Number(rates.USD_TJS).toFixed(3)}
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-gray-500">Количество</span>
-            <span className="font-semibold">
-              {item.quantity} шт.
-            </span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-gray-500">Общие расходы в сомони</span>
-            <span className="font-semibold">
-              {validAmounts
-                ? (
-                    unitCost * Number(item.quantity)
-                  ).toFixed(2)
-                : '—'} TJS
-            </span>
-          </div>
-        </div>
+        <p className="text-xs text-gray-500">
+          Общие расходы всей поставки
+        </p>
+        <p className="text-2xl font-bold mt-1">
+          {allItemsValid
+            ? totalCost.toFixed(2)
+            : '—'} сомони
+        </p>
       </div>
 
-      {/* НАВИГАЦИЯ */}
       <div className="flex gap-2 pt-2">
-
         <button
           type="button"
           onClick={() => setBatchStep(3)}
@@ -3074,43 +3141,23 @@ const handleSavePurchaseBatch = async (e) => {
 
         <button
           type="button"
-          disabled={!validAmounts}
+          disabled={!allItemsValid}
           onClick={() => setBatchStep(5)}
           className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-40"
         >
           Далее
         </button>
-
       </div>
-
     </div>
   );
 })()}
 
 
 
+
 {/* ШАГ 5 — ПРОВЕРКА ПОСТАВКИ */}
-{batchStep === 5 && batchItems[0] && (() => {
-  const item = batchItems[0];
 
-  const product = products.find(
-    p => String(p.id) === String(item.productId)
-  );
-
-  const quantity = Number(item.quantity) || 0;
-  const wholesale = Number(item.wholesaleAmount) || 0;
-  const cargo = Number(item.cargoAmount) || 0;
-  const unitCost = calculateBatchItemCost(item);
-  const totalCost = unitCost * quantity;
-
-  const variants = showBatchVariants
-    ? item.variants || []
-    : [{
-        color: 'Без цвета',
-        size: 'Без размера',
-        quantity: String(quantity)
-      }];
-
+{batchStep === 5 && batchItems.length > 0 && (() => {
   const formatMoney = (amount, currency) => {
     const symbols = {
       CNY: '¥',
@@ -3121,19 +3168,60 @@ const handleSavePurchaseBatch = async (e) => {
     return `${amount} ${symbols[currency] || currency}`;
   };
 
+  const totalQuantity = batchItems.reduce(
+    (sum, item) => sum + (Number(item.quantity) || 0),
+    0
+  );
+
+  const totalCost = batchItems.reduce(
+    (sum, item) =>
+      sum + calculateBatchItemCost(item) * Number(item.quantity),
+    0
+  );
+
+  const allItemsValid = batchItems.every(item => {
+    const quantity = Number(item.quantity);
+    const variants = item.variants || [];
+
+    const variantsTotal = variants.reduce(
+      (sum, variant) =>
+        sum + (Number(variant.quantity) || 0),
+      0
+    );
+
+    return (
+      item.productId &&
+      Number.isInteger(quantity) &&
+      quantity > 0 &&
+      variants.length > 0 &&
+      variants.every(variant =>
+        String(variant.color || '').trim() &&
+        String(variant.size || '').trim() &&
+        Number.isInteger(Number(variant.quantity)) &&
+        Number(variant.quantity) >= 0
+      ) &&
+      variantsTotal === quantity &&
+      item.wholesaleAmount !== '' &&
+      item.cargoAmount !== '' &&
+      Number.isFinite(Number(item.wholesaleAmount)) &&
+      Number.isFinite(Number(item.cargoAmount)) &&
+      Number(item.wholesaleAmount) >= 0 &&
+      Number(item.cargoAmount) >= 0
+    );
+  });
+
   return (
     <div className="space-y-5">
-
       <div>
         <h3 className="text-base font-bold">
           Проверьте поставку
         </h3>
         <p className="text-xs text-gray-400 mt-1">
-          Убедитесь, что все данные указаны правильно
+          Проверьте все модели перед принятием на склад
         </p>
       </div>
 
-      {/* НАЗВАНИЕ */}
+      {/* НАЗВАНИЕ ПОСТАВКИ */}
       <div className={`rounded-xl p-3 ${
         isDarkMode ? 'bg-[#252525]' : 'bg-gray-50'
       }`}>
@@ -3145,131 +3233,178 @@ const handleSavePurchaseBatch = async (e) => {
         </p>
       </div>
 
-      {/* ТОВАР */}
-      <div>
-        <p className="text-xs font-bold mb-2">
-          Товар
-        </p>
-
-        <div className={`flex items-center gap-3 rounded-xl border p-3 ${
-          isDarkMode ? 'border-gray-700' : 'border-gray-200'
-        }`}>
-          <img
-            src={product?.photo}
-            alt={product?.title || 'Товар'}
-            className="w-14 h-14 rounded-xl object-cover"
-          />
-
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">
-              {product?.title || 'Товар не найден'}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Количество: {quantity} шт.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ВАРИАНТЫ */}
-      <div className="space-y-2">
+      {/* ВСЕ МОДЕЛИ */}
+      <div className="space-y-3">
         <p className="text-xs font-bold">
-          Распределение товара
+          Товары в поставке ({batchItems.length})
         </p>
 
-        {variants.map((variant, index) => (
-          <div
-            key={index}
-            className={`flex justify-between items-center rounded-lg p-3 text-xs ${
-              isDarkMode ? 'bg-[#252525]' : 'bg-gray-50'
-            }`}
-          >
-            <span>
-              {variant.color} / {variant.size}
-            </span>
-            <span className="font-bold">
-              {variant.quantity} шт.
-            </span>
-          </div>
-        ))}
+        {batchItems.map((item, itemIndex) => {
+          const product = products.find(
+            p => String(p.id) === String(item.productId)
+          );
+
+          const quantity = Number(item.quantity) || 0;
+          const unitCost = calculateBatchItemCost(item);
+          const itemTotalCost = unitCost * quantity;
+
+          const variants = item.variants || [];
+
+          return (
+            <div
+              key={`${item.productId}-${itemIndex}`}
+              className={`rounded-xl border p-3 space-y-3 ${
+                isDarkMode
+                  ? 'border-gray-700 bg-[#252525]'
+                  : 'border-gray-200 bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src={product?.photo}
+                  alt={product?.title || 'Товар'}
+                  className="w-14 h-14 rounded-xl object-cover"
+                />
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold truncate">
+                    {product?.title || 'Товар не найден'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {quantity} шт.
+                  </p>
+                </div>
+              </div>
+
+              {/* ВАРИАНТЫ */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold">
+                  Цвета и размеры
+                </p>
+
+                {variants.map((variant, index) => (
+                  <div
+                    key={index}
+                    className={`flex justify-between items-center rounded-lg p-2 text-xs ${
+                      isDarkMode ? 'bg-[#1E1E1E]' : 'bg-white'
+                    }`}
+                  >
+                    <span>
+                      {variant.color} / {variant.size}
+                    </span>
+                    <span className="font-bold">
+                      {variant.quantity} шт.
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* ФИНАНСЫ */}
+              <div className="border-t border-gray-300/30 pt-3 space-y-2">
+                <div className="flex justify-between gap-2 text-xs">
+                  <span className="text-gray-400">
+                    Закупка
+                  </span>
+                  <span className="font-semibold">
+                    {formatMoney(
+                      Number(item.wholesaleAmount),
+                      item.wholesaleCurrency
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex justify-between gap-2 text-xs">
+                  <span className="text-gray-400">
+                    Карго
+                  </span>
+                  <span className="font-semibold">
+                    {formatMoney(
+                      Number(item.cargoAmount),
+                      item.cargoCurrency
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex justify-between gap-2 text-xs">
+                  <span className="text-gray-400">
+                    Цена продажи за штуку
+                  </span>
+                  <span className="font-semibold">
+                    {item.salePriceTjs === ''
+                      ? 'Не указана'
+                      : `${Number(item.salePriceTjs).toFixed(2)} TJS`}
+                  </span>
+                </div>
+
+                <div className="flex justify-between gap-2 text-xs">
+                  <span className="text-gray-400">
+                    Себестоимость 1 шт.
+                  </span>
+                  <span className="font-bold">
+                    {unitCost.toFixed(2)} TJS
+                  </span>
+                </div>
+
+                <div className="flex justify-between gap-2 text-xs">
+                  <span className="text-gray-400">
+                    Всего по модели
+                  </span>
+                  <span className="font-bold text-[#8B2635]">
+                    {itemTotalCost.toFixed(2)} TJS
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* РАСХОДЫ */}
-      <div>
-        <p className="text-xs font-bold mb-2">
-          Финансы
-        </p>
-
-        <div className={`rounded-xl p-3 space-y-3 ${
-          isDarkMode ? 'bg-[#252525]' : 'bg-gray-50'
-        }`}>
-
-          <div className="flex justify-between text-xs gap-3">
-            <span className="text-gray-400">
-              Закупка
-            </span>
-            <span className="font-semibold">
-              {formatMoney(wholesale, item.wholesaleCurrency)}
-            </span>
-          </div>
-
-          <div className="flex justify-between text-xs gap-3">
-            <span className="text-gray-400">
-              Карго
-            </span>
-            <span className="font-semibold">
-              {formatMoney(cargo, item.cargoCurrency)}
-            </span>
-          </div>
-
-          <div className="flex justify-between text-xs gap-3">
-            <span className="text-gray-400">
-              Цена продажи за штуку
-            </span>
-            <span className="font-semibold">
-              {item.salePriceTjs === ''
-                ? 'Не указана'
-                : `${Number(item.salePriceTjs).toFixed(2)} TJS`}
-            </span>
-          </div>
-
-        </div>
-      </div>
-
-      {/* ИТОГ */}
+      {/* ОБЩИЙ ИТОГ */}
       <div className={`rounded-2xl p-4 space-y-3 ${
         isDarkMode
           ? 'bg-[#252525] border border-gray-700'
           : 'bg-rose-50 border border-rose-100'
       }`}>
-        <div>
-          <p className="text-xs text-gray-500">
-            Общие расходы
-          </p>
-          <p className="text-xl font-bold text-[#8B2635] mt-1">
-            {totalCost.toFixed(2)} сомони
-          </p>
+        <p className="text-xs text-gray-500">
+          Итог всей поставки
+        </p>
+
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500">
+            Количество моделей
+          </span>
+          <span className="font-bold">
+            {batchItems.length}
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="text-sm text-gray-500">
+            Всего единиц
+          </span>
+          <span className="font-bold">
+            {totalQuantity} шт.
+          </span>
         </div>
 
         <div className="border-t border-gray-300/40 pt-3">
           <p className="text-xs text-gray-500">
-            Себестоимость одной единицы
+            Общие расходы поставки
           </p>
-          <p className="text-lg font-bold mt-1">
-            {unitCost.toFixed(2)} сомони
+          <p className="text-2xl font-bold text-[#8B2635] mt-1">
+            {totalCost.toFixed(2)} сомони
           </p>
         </div>
       </div>
 
       {/* ПРЕДУПРЕЖДЕНИЕ */}
       <div className="rounded-xl bg-amber-50 text-amber-800 p-3 text-xs">
-        После подтверждения закупочная партия будет отправлена
-        на сервер и зарегистрирована в системе.
+        После подтверждения все модели и их варианты будут отправлены
+        на сервер и зарегистрированы в системе.
       </div>
 
       {/* КНОПКИ */}
       <div className="flex gap-2 pt-2">
-
         <button
           type="button"
           disabled={batchSaving}
@@ -3283,7 +3418,7 @@ const handleSavePurchaseBatch = async (e) => {
 
         <button
           type="button"
-          disabled={batchSaving || !product}
+          disabled={batchSaving || !allItemsValid}
           onClick={() => handleSavePurchaseBatch()}
           className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
         >
@@ -3296,13 +3431,10 @@ const handleSavePurchaseBatch = async (e) => {
             </>
           )}
         </button>
-
       </div>
-
     </div>
   );
 })()}
-
 
 
             </div>
