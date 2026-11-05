@@ -81,11 +81,6 @@ const [isRefreshing, setIsRefreshing] = useState(false);
 const tabOrder = ['home', 'products', 'calc', 'courier'];
 
 const handleTouchStart = (e) => {
-  if (e.target.closest('input, textarea, select, button, [data-no-swipe]')) {
-    swipeStart.current = null;
-    return;
-  }
-
   const touch = e.touches[0];
 
   swipeStart.current = {
