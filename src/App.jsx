@@ -1177,13 +1177,6 @@ const handleSavePurchaseBatch = async (e) => {
           >
             {isDarkMode ? <Sun size={15} /> : <Moon size={15} />}
           </button>
-          <button 
-            onClick={fetchRates} 
-            disabled={loading}
-            className="bg-black/30 p-2 rounded-xl text-rose-100 active:scale-95 transition-transform"
-          >
-            <RefreshCw size={15} className={loading ? 'animate-spin text-rose-300' : ''} />
-          </button>
         </div>
       </header>
 
@@ -1309,22 +1302,6 @@ const handleSavePurchaseBatch = async (e) => {
                 </span>
               </div>
             
-              <button
-                onClick={() => {
-                  setBatchItems([createEmptyBatchItem()]);
-                  setBatchNotes('');
-                  setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
-                  setBatchNewProductTitle('');
-                  setBatchNewProductPhoto('');
-                  setShowBatchProductCreation(false);
-                  setBatchStep(1);
-                  setShowBatchVariants(false);
-                  setIsBatchModalOpen(true);
-                }}
-                className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-[0.98]"
-              >
-                + Принять новую закупочную партию
-              </button>
             </div>
 
             <div className="relative">
@@ -1883,9 +1860,9 @@ const handleSavePurchaseBatch = async (e) => {
       )}
 
       {/* МОДАЛЬНОЕ ОКНО ПРОФИЛЯ И КУРЬЕРОВ */}
-      {isProfileModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 relative animate-scale-up ${
+      {isAddModalOpen && (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-3">
+        <div className={`w-full max-w-sm max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl space-y-5 relative animate-scale-up ${
             isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
           }`}>
             <button 
@@ -2027,6 +2004,15 @@ const handleSavePurchaseBatch = async (e) => {
           <input
             type="text"
             required
+              onFocus={(e) => {
+                setTimeout(() => {
+                  e.target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                  });
+                }, 300);
+             }}
+             
             autoFocus
             maxLength={100}
             value={prodTitle}
