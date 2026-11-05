@@ -118,26 +118,63 @@ export default function App() {
   const [calcCargoCost, setCalcCargoCost] = useState('15');
   const [calcCargoCurrency, setCalcCargoCurrency] = useState('USD');
 
-  // КАТАЛОГ ТОВАРОВ
-  const [products, setProducts] = useState(() => {
-    const saved = localStorage.getItem('mekha_products');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 1,
-        title: 'Свитер белый',
-        photo: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400',
-        quantity: 5,
-        totalWholesale: 590,
-        wholesaleCurrency: 'TJS',
-        cargoCost: 300,
-        cargoCurrency: 'CNY',
+    // КАТАЛОГ ТОВАРОВ — ИСТОЧНИК ДАННЫХ: POSTGRESQL
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  const loadProducts = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/products`);
+
+      if (!response.ok) {
+        throw new Error(`Ошибка загрузки каталога: ${response.status}`);
       }
-    ];
-  });
+
+      const data = await response.json();
+
+      if (!data.success || !Array.isArray(data.products)) {
+        throw new Error('Сервер вернул некорректный каталог');
+      }
+
+      const serverProducts = data.products.map(product => ({
+        id: product.id,
+        legacyId: product.legacyId,
+        title: product.title,
+        photo: product.photo || '',
+        quantity: Number(product.quantity || 0),
+
+        totalWholesale: Number(product.totalWholesaleTjs || 0),
+        wholesaleCurrency: 'TJS',
+
+        cargoCost: Number(product.cargoCostTjs || 0),
+        cargoCurrency: 'TJS',
+
+        unitCostTjs: Number(product.unitCostTjs || 0),
+        salePriceTjs: Number(product.salePriceTjs || 0)
+      }));
+
+      setProducts(serverProducts);
+      return true;
+
+    } catch (error) {
+      console.error('Ошибка загрузки каталога:', error);
+      return false;
+
+    } finally {
+      setProductsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem('mekha_products', JSON.stringify(products));
-  }, [products]);
+  loadProducts();
+
+  const intervalId = setInterval(() => {
+    loadProducts();
+  }, 5000);
+
+  return () => clearInterval(intervalId);
+}, []);
+
 
   // ИСТОРИЯ ОТПРАВОК
   const [deliveries, setDeliveries] = useState(() => {
@@ -759,7 +796,7 @@ const handleSavePurchaseBatch = async (e) => {
     payloadItems.push({
       legacyId: String(product.id),
       title: product.title,
-      photo: null,
+      photo: product.photo,
       quantity,
 
       wholesaleAmount,
@@ -806,7 +843,7 @@ const handleSavePurchaseBatch = async (e) => {
         data.error || 'Не удалось сохранить партию'
       );
     }
-
+    await loadProducts();
     setBatchItems([]);
     setBatchNotes('');
     setBatchName('');
