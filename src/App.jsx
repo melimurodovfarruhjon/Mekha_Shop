@@ -1264,23 +1264,25 @@ const handleSavePurchaseBatch = async (e) => {
       </header>
 
       {/* Основной контент */}
-       <main
-         className="flex-1 p-3 pb-24 space-y-4 overflow-y-auto touch-pan-y"
+        <main
+         className="flex-1 min-h-0 overflow-hidden touch-pan-y"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
         >
         <div
-          className="w-full will-change-transform"
+          className="flex h-full w-[400%] will-change-transform"
           style={{
-            transform: `translate3d(${swipeOffset}px, 0, 0)`,
-            transition: isDragging ? 'none' : 'transform 220ms ease-out'
+            transform: `translate3d(calc(-${tabOrder.indexOf(activeTab) * 25}% + ${swipeOffset}px), 0, 0)`,
+            transition: isDragging
+              ? 'none'
+              : 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)'
           }}
         >
 
         {/* ЭКРАН 1 — ГЛАВНАЯ */}
-          {activeTab === 'home' && (
+        <section className="w-1/4 h-full flex-none overflow-y-auto p-3 pb-24">
 
           <div className="space-y-4">
             
@@ -1384,10 +1386,10 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
           </div>
-        )}
+        </section>
 
         {/* ТОВАРЫ */}
-        {activeTab === 'products' && (
+        <section className="w-1/4 h-full flex-none overflow-y-auto p-3 pb-24">
           <div className="space-y-3.5">
             <div className="flex flex-col gap-3">
               <div className="flex justify-between items-center">
@@ -1528,10 +1530,10 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
           </div>
-        )}
+        </section>
 
         {/* КАЛЬКУЛЯТОР */}
-        {activeTab === 'calc' && (
+        <section className="w-1/4 h-full flex-none overflow-y-auto p-3 pb-24">
           <div className="space-y-4">
             
             <div className={`p-3.5 rounded-2xl border shadow-sm flex justify-around text-center ${
@@ -1660,10 +1662,10 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
           </div>
-        )}
+        </section>
 
         {/* РАЗДЕЛ КУРЬЕР / ОТПРАВКИ */}
-        {activeTab === 'courier' && (
+        <section className="w-1/4 h-full flex-none overflow-y-auto p-3 pb-24">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Отправка заказов в Telegram</h2>
@@ -1923,7 +1925,7 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
           </div>
-        )}
+        </section>
         
        </div>
       </main>
