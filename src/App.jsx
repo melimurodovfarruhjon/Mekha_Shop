@@ -74,7 +74,8 @@ const [swipeDirection, setSwipeDirection] = useState('next');
 
 // Свайп между разделами
 const swipeStart = useRef(null);
-
+const [swipeOffset, setSwipeOffset] = useState(0);
+const [isDragging, setIsDragging] = useState(false);
 const tabOrder = ['home', 'products', 'calc', 'courier'];
 
 const handlePointerDown = (e) => {
@@ -89,6 +90,35 @@ const handlePointerDown = (e) => {
     x: e.clientX,
     y: e.clientY
   };
+
+  setIsDragging(false);
+  setSwipeOffset(0);
+
+  e.currentTarget.setPointerCapture(e.pointerId);
+};
+
+const handlePointerMove = (e) => {
+  if (!swipeStart.current || e.pointerType !== 'touch') return;
+
+  const deltaX = e.clientX - swipeStart.current.x;
+  const deltaY = e.clientY - swipeStart.current.y;
+
+  // Не мешаем вертикальной прокрутке
+  if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
+
+  const currentIndex = tabOrder.indexOf(activeTab);
+
+  // Не двигаем экран за пределами первого и последнего раздела
+  if (
+    (currentIndex === 0 && deltaX > 0) ||
+    (currentIndex === tabOrder.length - 1 && deltaX < 0)
+  ) {
+    setSwipeOffset(deltaX * 0.25);
+  } else {
+    setSwipeOffset(deltaX);
+  }
+
+  setIsDragging(true);
 };
 
 const handlePointerUp = (e) => {
@@ -99,24 +129,27 @@ const handlePointerUp = (e) => {
 
   swipeStart.current = null;
 
-  if (
-    Math.abs(deltaX) < 60 ||
-    Math.abs(deltaX) < Math.abs(deltaY) * 1.3
-  ) return;
-
   const currentIndex = tabOrder.indexOf(activeTab);
 
-  if (deltaX < 0 && currentIndex < tabOrder.length - 1) {
-  setSwipeDirection('next');
-  setActiveTab(tabOrder[currentIndex + 1]);
-} else if (deltaX > 0 && currentIndex > 0) {
-  setSwipeDirection('prev');
-  setActiveTab(tabOrder[currentIndex - 1]);
-}
+  if (
+    Math.abs(deltaX) >= 70 &&
+    Math.abs(deltaX) > Math.abs(deltaY) * 1.3
+  ) {
+    if (deltaX < 0 && currentIndex < tabOrder.length - 1) {
+      setActiveTab(tabOrder[currentIndex + 1]);
+    } else if (deltaX > 0 && currentIndex > 0) {
+      setActiveTab(tabOrder[currentIndex - 1]);
+    }
+  }
+
+  setSwipeOffset(0);
+  setIsDragging(false);
 };
 
 const handlePointerCancel = () => {
   swipeStart.current = null;
+  setSwipeOffset(0);
+  setIsDragging(false);
 };
 
   
@@ -1231,15 +1264,22 @@ const handleSavePurchaseBatch = async (e) => {
       </header>
 
       {/* Основной контент */}
-      <main
-        className="flex-1 p-3 pb-24 space-y-4 overflow-y-auto touch-pan-y"
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
+       <main
+          className="flex-1 p-3 pb-24 space-y-4 overflow-y-auto touch-pan-y"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
         >
         <div
           key={activeTab}
-          className={swipeDirection === 'next' ? 'tab-slide-next' : 'tab-slide-prev'}
+          className="will-change-transform"
+          style={{
+            transform: `translate3d(${swipeOffset}px, 0, 0)`,
+            transition: isDragging
+              ? 'none'
+              : 'transform 220ms ease-out'
+          }}
         >
 
         {/* ГЛАВНЫЙ ЭКРАН */}
