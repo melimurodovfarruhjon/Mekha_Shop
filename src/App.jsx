@@ -115,29 +115,6 @@ const handlePointerCancel = () => {
   swipeStart.current = null;
 };
 
-const handleSwipeEnd = (e) => {
-  if (!swipeStart.current) return;
-
-  const deltaX = e.changedTouches[0].clientX - swipeStart.current.x;
-  const deltaY = e.changedTouches[0].clientY - swipeStart.current.y;
-
-  swipeStart.current = null;
-
-  // Игнорируем вертикальную прокрутку
-  if (Math.abs(deltaX) < 70 || Math.abs(deltaX) < Math.abs(deltaY) * 1.3) {
-    return;
-  }
-
-  const currentIndex = tabOrder.indexOf(activeTab);
-
-  if (deltaX < 0 && currentIndex < tabOrder.length - 1) {
-    setActiveTab(tabOrder[currentIndex + 1]);
-  }
-
-  if (deltaX > 0 && currentIndex > 0) {
-    setActiveTab(tabOrder[currentIndex - 1]);
-  }
-};
   
   useEffect(() => {
   localStorage.setItem('mekha_active_tab', activeTab);
