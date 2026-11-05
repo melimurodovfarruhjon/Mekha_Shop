@@ -1265,25 +1265,24 @@ const handleSavePurchaseBatch = async (e) => {
 
       {/* Основной контент */}
        <main
-          className="flex-1 p-3 pb-24 space-y-4 overflow-y-auto touch-pan-y"
+         className="flex-1 p-3 pb-24 overflow-y-auto overflow-x-hidden touch-pan-y"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
         >
         <div
-          key={activeTab}
-          className="will-change-transform"
+          className="flex items-start w-[400%] will-change-transform"
           style={{
-            transform: `translate3d(${swipeOffset}px, 0, 0)`,
-            transition: isDragging
-              ? 'none'
-              : 'transform 220ms ease-out'
+            transform: `translate3d(calc(-${tabOrder.indexOf(activeTab) * 25}% + ${swipeOffset}px), 0, 0)`,
+            transition: isDragging ? 'none' : 'transform 220ms ease-out'
           }}
         >
 
-        {/* ГЛАВНЫЙ ЭКРАН */}
-        {activeTab === 'home' && (
+        {/* ЭКРАН 1 — ГЛАВНАЯ */}
+          <section className="w-1/4 flex-none">
+          {activeTab === 'home' && (
+
           <div className="space-y-4">
             
             <div className="bg-gradient-to-br from-[#58111A] to-[#3d0b12] text-white p-5 rounded-3xl shadow-md space-y-3 relative overflow-hidden">
@@ -1387,6 +1386,7 @@ const handleSavePurchaseBatch = async (e) => {
 
           </div>
         )}
+       </section>
 
         {/* ТОВАРЫ */}
         {activeTab === 'products' && (
