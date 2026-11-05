@@ -76,6 +76,8 @@ const [swipeDirection, setSwipeDirection] = useState('next');
 const swipeStart = useRef(null);
 const [swipeOffset, setSwipeOffset] = useState(0);
 const [isDragging, setIsDragging] = useState(false);
+const [pullDistance, setPullDistance] = useState(0);
+const [isRefreshing, setIsRefreshing] = useState(false);
 const tabOrder = ['home', 'products', 'calc', 'courier'];
 
 const handlePointerDown = (e) => {
@@ -87,9 +89,10 @@ const handlePointerDown = (e) => {
   }
 
   swipeStart.current = {
-    x: e.clientX,
-    y: e.clientY
-  };
+  x: e.clientX,
+  y: e.clientY,
+  section: e.target.closest('section')
+};
 
   setIsDragging(false);
   setSwipeOffset(0);
@@ -103,8 +106,19 @@ const handlePointerMove = (e) => {
   const deltaX = e.clientX - swipeStart.current.x;
   const deltaY = e.clientY - swipeStart.current.y;
 
-  // Не мешаем вертикальной прокрутке
-  if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
+  // Pull-to-refresh: тянем вниз только в начале активной панели
+if (
+  deltaY > 0 &&
+  Math.abs(deltaY) > Math.abs(deltaX) * 1.2 &&
+  swipeStart.current.section?.scrollTop <= 0
+) {
+  setPullDistance(Math.min(deltaY * 0.55, 90));
+  setIsDragging(false);
+  return;
+}
+
+// Вертикальную прокрутку не перехватываем
+if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
 
   const currentIndex = tabOrder.indexOf(activeTab);
 
@@ -129,6 +143,23 @@ const handlePointerUp = (e) => {
 
   swipeStart.current = null;
 
+  if (deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
+  if (pullDistance >= 55 && !isRefreshing) {
+    setIsRefreshing(true);
+
+    loadProducts().finally(() => {
+      setIsRefreshing(false);
+      setPullDistance(0);
+    });
+  } else {
+    setPullDistance(0);
+  }
+
+  setSwipeOffset(0);
+  setIsDragging(false);
+  return;
+}
+
   const currentIndex = tabOrder.indexOf(activeTab);
 
   if (
@@ -149,6 +180,7 @@ const handlePointerUp = (e) => {
 const handlePointerCancel = () => {
   swipeStart.current = null;
   setSwipeOffset(0);
+  setPullDistance(0);
   setIsDragging(false);
 };
 
@@ -1265,12 +1297,30 @@ const handleSavePurchaseBatch = async (e) => {
 
       {/* Основной контент */}
         <main
-         className="flex-1 min-h-0 overflow-hidden touch-pan-y"
+        className="relative flex-1 min-h-0 overflow-hidden touch-pan-y"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
         >
+        
+        <div
+            className="absolute top-0 left-0 right-0 z-30 flex justify-center pointer-events-none"
+            style={{
+              transform: `translateY(${Math.max(pullDistance, isRefreshing ? 55 : 0) - 45}px)`,
+              opacity: pullDistance > 5 || isRefreshing ? 1 : 0,
+              transition: isRefreshing ? 'transform 200ms ease' : 'none'
+            }}
+          >
+            <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg border border-rose-100 text-[#58111A] text-xs font-semibold">
+              <RefreshCw
+                size={16}
+                className={isRefreshing ? 'animate-spin' : ''}
+              />
+              {isRefreshing ? 'Обновляем каталог...' : 'Отпусти для обновления'}
+            </div>
+          </div>
+
         <div
           className="flex h-full w-[400%] will-change-transform"
           style={{
