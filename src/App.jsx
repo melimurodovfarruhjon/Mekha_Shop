@@ -1022,13 +1022,51 @@ const handleSavePurchaseBatch = async (e) => {
     setIsAddModalOpen(false);
   };
 
-  const confirmDeleteProduct = () => {
-    if (productToDelete) {
-      if (editingId === productToDelete.id) handleCancelEdit();
-      setProducts(products.filter(p => p.id !== productToDelete.id));
-      setProductToDelete(null);
+  const confirmDeleteProduct = async () => {
+  if (!productToDelete) return;
+
+  const productId = productToDelete.id;
+
+  try {
+    const response = await fetch(
+      `${BACKEND_URL}/api/products/${encodeURIComponent(productId)}`,
+      {
+        method: 'DELETE'
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Не удалось удалить товар');
     }
-  };
+
+    await loadProducts();
+
+    if (editingId === productId) {
+      handleCancelEdit();
+    }
+
+    setProductToDelete(null);
+
+    setModalAlert({
+      title: 'Товар удалён',
+      message: 'Модель удалена из каталога.',
+      type: 'success'
+    });
+
+  } catch (error) {
+    console.error('Ошибка удаления товара:', error);
+
+    setProductToDelete(null);
+
+    setModalAlert({
+      title: 'Ошибка удаления',
+      message: error.message || 'Не удалось связаться с сервером.',
+      type: 'error'
+    });
+  }
+};
 
   const formatCurrencyValue = (val, curr) => {
     if (curr === 'TJS') return `${val} TJS`;
