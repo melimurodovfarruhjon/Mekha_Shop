@@ -3218,24 +3218,24 @@ const handleSavePurchaseBatch = async (e) => {
         <button 
           onClick={() => setActiveTab('home')} 
           className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
-            activeTab === 'home'
+            activeTab === 'courier'
               ? '-translate-y-2 text-rose-500 font-bold'
               : 'translate-y-0 text-gray-400'
           }`}
         >
-          <Home size={21} />
+          <Home size={25} />
           <span className="text-[10px] mt-1">Главная</span>
         </button>
 
         <button 
           onClick={() => setActiveTab('products')} 
           className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
-            activeTab === 'home'
+            activeTab === 'courier'
               ? '-translate-y-2 text-rose-500 font-bold'
               : 'translate-y-0 text-gray-400'
           }`}
         >
-          <ShoppingBag size={21} />
+          <ShoppingBag size={25} />
           <span className="text-[10px] mt-1">Товары</span>
         </button>
 
@@ -3264,12 +3264,12 @@ const handleSavePurchaseBatch = async (e) => {
         <button 
           onClick={() => setActiveTab('calc')} 
           className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
-          activeTab === 'home'
-            ? '-translate-y-2 text-rose-500 font-bold'
-            : 'translate-y-0 text-gray-400'
-        }`}
+            activeTab === 'courier'
+              ? '-translate-y-2 text-rose-500 font-bold'
+              : 'translate-y-0 text-gray-400'
+          }`}
         >
-          <Calculator size={21} />
+          <Calculator size={25} />
           <span className="text-[10px] mt-1">Расчет</span>
         </button>
 
@@ -3281,7 +3281,7 @@ const handleSavePurchaseBatch = async (e) => {
               : 'translate-y-0 text-gray-400'
           }`}
         >
-          <Truck size={21} />
+          <Truck size={25} />
           <span className="text-[10px] mt-1">Курьер</span>
         </button>
       </nav>
