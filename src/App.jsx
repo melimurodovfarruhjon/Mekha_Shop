@@ -69,6 +69,51 @@ export default function App() {
 
   return allowedTabs.includes(savedTab) ? savedTab : 'home';
 });
+
+// Свайп между разделами
+const swipeStart = useRef(null);
+
+const tabOrder = ['home', 'products', 'calc', 'courier'];
+
+const handleSwipeStart = (e) => {
+  if (
+    e.target.closest(
+      'input, textarea, select, button, [data-no-swipe]'
+    )
+  ) {
+    swipeStart.current = null;
+    return;
+  }
+
+  swipeStart.current = {
+    x: e.touches[0].clientX,
+    y: e.touches[0].clientY
+  };
+};
+
+const handleSwipeEnd = (e) => {
+  if (!swipeStart.current) return;
+
+  const deltaX = e.changedTouches[0].clientX - swipeStart.current.x;
+  const deltaY = e.changedTouches[0].clientY - swipeStart.current.y;
+
+  swipeStart.current = null;
+
+  // Игнорируем вертикальную прокрутку
+  if (Math.abs(deltaX) < 70 || Math.abs(deltaX) < Math.abs(deltaY) * 1.3) {
+    return;
+  }
+
+  const currentIndex = tabOrder.indexOf(activeTab);
+
+  if (deltaX < 0 && currentIndex < tabOrder.length - 1) {
+    setActiveTab(tabOrder[currentIndex + 1]);
+  }
+
+  if (deltaX > 0 && currentIndex > 0) {
+    setActiveTab(tabOrder[currentIndex - 1]);
+  }
+};
   
   useEffect(() => {
   localStorage.setItem('mekha_active_tab', activeTab);
@@ -1181,7 +1226,11 @@ const handleSavePurchaseBatch = async (e) => {
       </header>
 
       {/* Основной контент */}
-      <main className="flex-1 p-3 pb-24 space-y-4 overflow-y-auto">
+      <main
+        className="flex-1 p-3 pb-24 space-y-4 overflow-y-auto touch-pan-y"
+        onTouchStart={handleSwipeStart}
+        onTouchEnd={handleSwipeEnd}
+      >
 
         {/* ГЛАВНЫЙ ЭКРАН */}
         {activeTab === 'home' && (
@@ -1830,34 +1879,44 @@ const handleSavePurchaseBatch = async (e) => {
 
       </main>
 
-      {/* КАСТОМНОЕ МОДАЛЬНОЕ ОКНО СООБЩЕНИЙ */}
-      {modalAlert && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center space-y-4 animate-scale-up ${
-            isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
-          }`}>
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto ${
-              modalAlert.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+      {/* ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ ТОВАРА */}
+        {productToDelete && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div className={`w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center space-y-4 ${
+              isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
             }`}>
-              {modalAlert.type === 'success' ? <Check size={24} /> : <AlertTriangle size={24} />}
-            </div>
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+                <Trash2 size={24} />
+              </div>
 
-            <div>
-              <h3 className="text-sm font-bold">{modalAlert.title}</h3>
-              <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
-                {modalAlert.message}
-              </p>
-            </div>
+              <div>
+                <h3 className="text-sm font-bold">Удалить модель?</h3>
+                <p className="text-xs text-gray-400 mt-2">
+                  Вы действительно хотите удалить «{productToDelete.title}» из каталога?
+                </p>
+                <p className="text-[10px] text-gray-400 mt-2">
+                  Товар с остатком на складе удалить нельзя.
+                </p>
+              </div>
 
-            <button 
-              onClick={() => setModalAlert(null)}
-              className="w-full bg-[#58111A] text-white py-2.5 rounded-xl text-xs font-semibold shadow-sm transition-transform active:scale-95"
-            >
-              Понятно
-            </button>
+              <button
+                type="button"
+                onClick={confirmDeleteProduct}
+                className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-bold"
+              >
+                Да, удалить
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setProductToDelete(null)}
+                className="w-full py-2 text-xs text-gray-400 font-semibold"
+              >
+                Отмена
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* МОДАЛЬНОЕ ОКНО ПРОФИЛЯ И КУРЬЕРОВ */}
       {isAddModalOpen && (
@@ -2012,7 +2071,7 @@ const handleSavePurchaseBatch = async (e) => {
                   });
                 }, 300);
              }}
-             
+
             autoFocus
             maxLength={100}
             value={prodTitle}
