@@ -1272,9 +1272,9 @@ const handleSavePurchaseBatch = async (e) => {
           onPointerCancel={handlePointerCancel}
         >
         <div
-          className="flex items-start w-[400%] will-change-transform"
+          className="w-full will-change-transform"
           style={{
-            transform: `translate3d(calc(-${tabOrder.indexOf(activeTab) * 25}% + ${swipeOffset}px), 0, 0)`,
+            transform: `translate3d(${swipeOffset}px, 0, 0)`,
             transition: isDragging ? 'none' : 'transform 220ms ease-out'
           }}
         >
