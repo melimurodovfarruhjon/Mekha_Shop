@@ -1020,16 +1020,13 @@ const handleSavePurchaseBatch = async (e) => {
 
   setProducts(prev => [newProduct, ...prev]);
 
-  setBatchItems(prev => {
-    const updated = [...prev];
-
-    updated[0] = {
-      ...updated[0],
-      productId: String(newProduct.id)
-    };
-
-    return updated;
-  });
+  setBatchItems(prev => [
+  ...prev,
+  {
+    ...createEmptyBatchItem(),
+    productId: String(newProduct.id)
+  }
+]);
 
   setBatchNewProductTitle('');
   setBatchNewProductPhoto('');
@@ -2394,16 +2391,27 @@ const handleSavePurchaseBatch = async (e) => {
                 type="button"
                 onClick={() => {
                   setBatchItems(prev => {
-                    const updated = [...prev];
-                    updated[0] = {
-                      ...updated[0],
-                      productId: String(product.id)
-                    };
-                    return updated;
+                    const exists = prev.some(
+                      item => String(item.productId) === String(product.id)
+                    );
+
+                    if (exists) {
+                      return prev.filter(
+                        item => String(item.productId) !== String(product.id)
+                      );
+                    }
+
+                    const newItem = createEmptyBatchItem();
+                    newItem.productId = String(product.id);
+
+                    return [...prev, newItem];
                   });
                 }}
+
                 className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left ${
-                  String(batchItems[0]?.productId) === String(product.id)
+                  batchItems.some(
+                      item => String(item.productId) === String(product.id)
+                    )
                     ? 'border-[#8B2635] bg-rose-50'
                     : isDarkMode
                       ? 'border-gray-700 bg-[#252525]'
@@ -2588,237 +2596,259 @@ const handleSavePurchaseBatch = async (e) => {
 
 
 {/* ШАГ 3 — КОЛИЧЕСТВО ТОВАРА */}
-{batchStep === 3 && batchItems[0] && (() => {
-  const item = batchItems[0];
-  const quantity = Number(item.quantity);
-  const variants = item.variants || [];
 
-  const variantsTotal = variants.reduce(
-    (sum, variant) => sum + (Number(variant.quantity) || 0),
-    0
-  );
+{batchStep === 3 && batchItems.length > 0 && (() => {
+  const allItemsValid = batchItems.every(item => {
+    const quantity = Number(item.quantity);
+    const variants = item.variants || [];
 
-  const validVariants = variants.length > 0 &&
-    variants.every(variant =>
-      variant.color.trim() &&
-      variant.size.trim() &&
-      Number.isInteger(Number(variant.quantity)) &&
-      Number(variant.quantity) >= 0
-    ) &&
-    variantsTotal === quantity;
+    const variantsTotal = variants.reduce(
+      (sum, variant) => sum + (Number(variant.quantity) || 0),
+      0
+    );
 
-  const canContinue =
-    Number.isInteger(quantity) &&
-    quantity > 0 &&
-    (!showBatchVariants || validVariants);
+    return (
+      Number.isInteger(quantity) &&
+      quantity > 0 &&
+      variants.length > 0 &&
+      variants.every(variant =>
+        String(variant.color || '').trim() &&
+        String(variant.size || '').trim() &&
+        Number.isInteger(Number(variant.quantity)) &&
+        Number(variant.quantity) >= 0
+      ) &&
+      variantsTotal === quantity
+    );
+  });
 
   return (
     <div className="space-y-5">
-
       <div>
-        <h3 className="text-base font-bold">Количество товара</h3>
+        <h3 className="text-base font-bold">
+          Количество, цвета и размеры
+        </h3>
         <p className="text-xs text-gray-400 mt-1">
-          Укажите, сколько единиц товара вы закупили
+          Настройте каждую модель отдельно
         </p>
       </div>
 
-      {/* ОБЩЕЕ КОЛИЧЕСТВО */}
-      <div>
-        <label className="block text-xs font-semibold mb-2">
-          Общее количество
-        </label>
+      {batchItems.map((item, itemIndex) => {
+        const product = products.find(
+          p => String(p.id) === String(item.productId)
+        );
 
-        <div className="relative">
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={item.quantity}
-            onChange={e =>
-              updateBatchItem(0, 'quantity', e.target.value)
-            }
-            placeholder="Например, 50"
-            className={batchInputClass}
-          />
+        const variants = item.variants || [];
 
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-            шт.
-          </span>
-        </div>
-      </div>
+        const quantity = Number(item.quantity) || 0;
 
-      {/* ВАРИАНТЫ */}
-      <div className={`rounded-2xl border p-4 space-y-4 ${
-        isDarkMode
-          ? 'border-gray-700 bg-[#252525]'
-          : 'border-gray-200 bg-gray-50'
-      }`}>
+        const variantsTotal = variants.reduce(
+          (sum, variant) =>
+            sum + (Number(variant.quantity) || 0),
+          0
+        );
 
-        <div>
-          <h4 className="text-sm font-bold">Цвета и размеры</h4>
-          <p className="text-xs text-gray-400 mt-1">
-            Необязательно. Используйте, если товар имеет разные варианты.
-          </p>
-        </div>
+        const isValid =
+          Number.isInteger(Number(item.quantity)) &&
+          quantity > 0 &&
+          variants.length > 0 &&
+          variants.every(variant =>
+            String(variant.color || '').trim() &&
+            String(variant.size || '').trim() &&
+            Number.isInteger(Number(variant.quantity)) &&
+            Number(variant.quantity) >= 0
+          ) &&
+          variantsTotal === quantity;
 
-        {!showBatchVariants ? (
-          <button
-            type="button"
-            onClick={() => {
-              setBatchItems(prev => prev.map((current, index) =>
-                index === 0
-                  ? {
-                      ...current,
-                      variants: [{
-                        color: '',
-                        size: '',
-                        quantity: current.quantity
-                      }]
-                    }
-                  : current
-              ));
-              setShowBatchVariants(true);
-            }}
-            className="w-full py-3 rounded-xl border border-dashed border-[#8B2635] text-[#8B2635] text-sm font-semibold"
+        return (
+          <div
+            key={`${item.productId}-${itemIndex}`}
+            className={`rounded-2xl border p-4 space-y-4 ${
+              isDarkMode
+                ? 'border-gray-700 bg-[#252525]'
+                : 'border-gray-200 bg-gray-50'
+            }`}
           >
-            <Plus size={16} className="inline mr-2" />
-            Добавить цвета и размеры
-          </button>
-        ) : (
-          <>
-            {variants.map((variant, index) => (
-              <div
-                key={index}
-                className={`rounded-xl border p-3 space-y-3 ${
-                  isDarkMode
-                    ? 'border-gray-700 bg-[#1E1E1E]'
-                    : 'border-gray-200 bg-white'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold">
-                    Вариант {index + 1}
-                  </span>
+            <div>
+              <p className="text-xs text-gray-400">
+                Модель {itemIndex + 1}
+              </p>
+              <h4 className="font-bold text-sm mt-1">
+                {product?.title || 'Товар'}
+              </h4>
+            </div>
 
-                  {variants.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeBatchVariant(0, index)}
-                      className="text-red-500 text-xs"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  )}
-                </div>
+            <div>
+              <label className="block text-xs font-semibold mb-2">
+                Общее количество
+              </label>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[11px] mb-1">
-                      Цвет
-                    </label>
-                    <input
-                      type="text"
-                      value={variant.color}
-                      onChange={e =>
-                        updateBatchVariant(
-                          0, index, 'color', e.target.value
-                        )
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={item.quantity}
+                onChange={e => {
+                  const value = e.target.value;
+
+                  setBatchItems(prev =>
+                    prev.map((current, index) => {
+                      if (index !== itemIndex) return current;
+
+                      const updatedVariants = [
+                        ...(current.variants || [])
+                      ];
+
+                      if (updatedVariants.length === 1) {
+                        updatedVariants[0] = {
+                          ...updatedVariants[0],
+                          quantity: value
+                        };
                       }
-                      placeholder="Чёрный"
-                      className={batchInputClass}
-                    />
-                  </div>
 
-                  <div>
-                    <label className="block text-[11px] mb-1">
-                      Размер
-                    </label>
-                    <input
-                      type="text"
-                      value={variant.size}
-                      onChange={e =>
-                        updateBatchVariant(
-                          0, index, 'size', e.target.value
-                        )
-                      }
-                      placeholder="XL"
-                      className={batchInputClass}
-                    />
-                  </div>
-                </div>
+                      return {
+                        ...current,
+                        quantity: value,
+                        variants: updatedVariants
+                      };
+                    })
+                  );
+                }}
+                placeholder="Например, 50"
+                className={batchInputClass}
+              />
+            </div>
 
-                <div>
-                  <label className="block text-[11px] mb-1">
-                    Количество
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={variant.quantity}
-                    onChange={e =>
-                      updateBatchVariant(
-                        0, index, 'quantity', e.target.value
-                      )
-                    }
-                    className={batchInputClass}
-                  />
-                </div>
+            <div>
+              <div className="mb-3">
+                <h5 className="text-sm font-bold">
+                  Цвета и размеры
+                </h5>
+                <p className="text-xs text-gray-400 mt-1">
+                  Укажите количество для каждого варианта
+                </p>
               </div>
-            ))}
 
-            <button
-              type="button"
-              onClick={() => addBatchVariant(0)}
-              className="w-full py-2.5 rounded-xl border border-dashed border-[#8B2635] text-[#8B2635] text-xs font-semibold"
-            >
-              <Plus size={14} className="inline mr-1" />
-              Добавить вариант
-            </button>
+              {variants.map((variant, variantIndex) => (
+                <div
+                  key={variantIndex}
+                  className={`rounded-xl border p-3 mb-3 space-y-3 ${
+                    isDarkMode
+                      ? 'border-gray-700 bg-[#1E1E1E]'
+                      : 'border-gray-200 bg-white'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold">
+                      Вариант {variantIndex + 1}
+                    </span>
+
+                    {variants.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeBatchVariant(itemIndex, variantIndex)
+                        }
+                        className="text-red-500 text-xs"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] mb-1">
+                        Цвет
+                      </label>
+                      <input
+                        type="text"
+                        value={variant.color}
+                        onChange={e =>
+                          updateBatchVariant(
+                            itemIndex,
+                            variantIndex,
+                            'color',
+                            e.target.value
+                          )
+                        }
+                        placeholder="Чёрный"
+                        className={batchInputClass}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] mb-1">
+                        Размер
+                      </label>
+                      <input
+                        type="text"
+                        value={variant.size}
+                        onChange={e =>
+                          updateBatchVariant(
+                            itemIndex,
+                            variantIndex,
+                            'size',
+                            e.target.value
+                          )
+                        }
+                        placeholder="XL"
+                        className={batchInputClass}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] mb-1">
+                      Количество
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={variant.quantity}
+                      onChange={e =>
+                        updateBatchVariant(
+                          itemIndex,
+                          variantIndex,
+                          'quantity',
+                          e.target.value
+                        )
+                      }
+                      className={batchInputClass}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => addBatchVariant(itemIndex)}
+                className="w-full py-3 rounded-xl border border-dashed border-[#8B2635] text-[#8B2635] text-xs font-semibold"
+              >
+                <Plus size={14} className="inline mr-1" />
+                Добавить цвет или размер
+              </button>
+            </div>
 
             <div className={`rounded-xl p-3 text-xs ${
-              variantsTotal === quantity
+              isValid
                 ? 'bg-green-50 text-green-700'
                 : 'bg-rose-50 text-[#8B2635]'
             }`}>
-              Распределено: {variantsTotal} из {item.quantity || 0} шт.
+              Распределено: {variantsTotal} из {quantity} шт.
 
-              {variantsTotal !== quantity && (
+              {!isValid && (
                 <p className="mt-1">
-                  Количество вариантов должно совпадать с общим количеством.
+                  Проверьте количество, цвета и размеры.
+                  Сумма вариантов должна совпадать с общим количеством.
                 </p>
               )}
             </div>
+          </div>
+        );
+      })}
 
-            <button
-              type="button"
-              onClick={() => {
-                updateBatchItem(0, 'quantity', item.quantity);
-                setBatchItems(prev => prev.map((current, index) =>
-                  index === 0
-                    ? {
-                        ...current,
-                        variants: [{
-                          color: 'Без цвета',
-                          size: 'Без размера',
-                          quantity: current.quantity
-                        }]
-                      }
-                    : current
-                ));
-                setShowBatchVariants(false);
-              }}
-              className="w-full text-xs text-gray-400 font-semibold py-2"
-            >
-              Убрать распределение по вариантам
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* НАВИГАЦИЯ */}
       <div className="flex gap-2 pt-2">
-
         <button
           type="button"
           onClick={() => setBatchStep(2)}
@@ -2831,15 +2861,13 @@ const handleSavePurchaseBatch = async (e) => {
 
         <button
           type="button"
-          disabled={!canContinue}
+          disabled={!allItemsValid}
           onClick={() => setBatchStep(4)}
           className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-40"
         >
           Далее
         </button>
-
       </div>
-
     </div>
   );
 })()}
