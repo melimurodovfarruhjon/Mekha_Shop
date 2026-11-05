@@ -80,49 +80,47 @@ const [pullDistance, setPullDistance] = useState(0);
 const [isRefreshing, setIsRefreshing] = useState(false);
 const tabOrder = ['home', 'products', 'calc', 'courier'];
 
-const handlePointerDown = (e) => {
-  if (e.pointerType !== 'touch') return;
-
+const handleTouchStart = (e) => {
   if (e.target.closest('input, textarea, select, button, [data-no-swipe]')) {
     swipeStart.current = null;
     return;
   }
 
+  const touch = e.touches[0];
+
   swipeStart.current = {
-  x: e.clientX,
-  y: e.clientY,
-  section: e.target.closest('section')
-};
+    x: touch.clientX,
+    y: touch.clientY,
+    section: e.target.closest('section')
+  };
 
-  setIsDragging(false);
   setSwipeOffset(0);
-
-  e.currentTarget.setPointerCapture(e.pointerId);
+  setPullDistance(0);
+  setIsDragging(false);
 };
 
-const handlePointerMove = (e) => {
-  if (!swipeStart.current || e.pointerType !== 'touch') return;
+const handleTouchMove = (e) => {
+  if (!swipeStart.current || isRefreshing) return;
 
-  const deltaX = e.clientX - swipeStart.current.x;
-  const deltaY = e.clientY - swipeStart.current.y;
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - swipeStart.current.x;
+  const deltaY = touch.clientY - swipeStart.current.y;
 
-  // Pull-to-refresh: тянем вниз только в начале активной панели
-if (
-  deltaY > 0 &&
-  Math.abs(deltaY) > Math.abs(deltaX) * 1.2 &&
-  swipeStart.current.section?.scrollTop <= 0
-) {
-  setPullDistance(Math.min(deltaY * 0.55, 90));
-  setIsDragging(false);
-  return;
-}
+  // Обновление при движении вниз с самого верха
+  if (
+    deltaY > 0 &&
+    Math.abs(deltaY) > Math.abs(deltaX) * 1.2 &&
+    swipeStart.current.section?.scrollTop <= 0
+  ) {
+    setPullDistance(Math.min(deltaY * 0.55, 90));
+    return;
+  }
 
-// Вертикальную прокрутку не перехватываем
-if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
+  // Вертикальную прокрутку не перехватываем
+  if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
 
   const currentIndex = tabOrder.indexOf(activeTab);
 
-  // Не двигаем экран за пределами первого и последнего раздела
   if (
     (currentIndex === 0 && deltaX > 0) ||
     (currentIndex === tabOrder.length - 1 && deltaX < 0)
@@ -135,34 +133,30 @@ if (Math.abs(deltaY) > Math.abs(deltaX) * 1.2) return;
   setIsDragging(true);
 };
 
-const handlePointerUp = (e) => {
-  if (!swipeStart.current || e.pointerType !== 'touch') return;
+const handleTouchEnd = (e) => {
+  if (!swipeStart.current) return;
 
-  const deltaX = e.clientX - swipeStart.current.x;
-  const deltaY = e.clientY - swipeStart.current.y;
+  const touch = e.changedTouches[0];
+  const deltaX = touch.clientX - swipeStart.current.x;
+  const deltaY = touch.clientY - swipeStart.current.y;
 
   swipeStart.current = null;
 
   if (deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
-  const finalPullDistance = Math.min(deltaY * 0.55, 90);
+    if (pullDistance >= 55 && !isRefreshing) {
+      refreshAppData();
+    } else {
+      setPullDistance(0);
+    }
 
-  if (finalPullDistance >= 55 && !isRefreshing) {
-    refreshAppData();
-  } else {
-    setPullDistance(0);
+    setSwipeOffset(0);
+    setIsDragging(false);
+    return;
   }
-
-  setSwipeOffset(0);
-  setIsDragging(false);
-  return;
-}
 
   const currentIndex = tabOrder.indexOf(activeTab);
 
-  if (
-    Math.abs(deltaX) >= 70 &&
-    Math.abs(deltaX) > Math.abs(deltaY) * 1.3
-  ) {
+  if (Math.abs(deltaX) >= 70 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
     if (deltaX < 0 && currentIndex < tabOrder.length - 1) {
       setActiveTab(tabOrder[currentIndex + 1]);
     } else if (deltaX > 0 && currentIndex > 0) {
@@ -171,10 +165,11 @@ const handlePointerUp = (e) => {
   }
 
   setSwipeOffset(0);
+  setPullDistance(0);
   setIsDragging(false);
 };
 
-const handlePointerCancel = () => {
+const handleTouchCancel = () => {
   swipeStart.current = null;
   setSwipeOffset(0);
   setPullDistance(0);
@@ -1319,10 +1314,10 @@ const handleSavePurchaseBatch = async (e) => {
       {/* Основной контент */}
         <main
         className="relative flex-1 min-h-0 overflow-hidden touch-pan-y"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerCancel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
         >
         
         <div
