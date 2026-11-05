@@ -107,10 +107,12 @@ const handlePointerUp = (e) => {
   const currentIndex = tabOrder.indexOf(activeTab);
 
   if (deltaX < 0 && currentIndex < tabOrder.length - 1) {
-    setActiveTab(tabOrder[currentIndex + 1]);
-  } else if (deltaX > 0 && currentIndex > 0) {
-    setActiveTab(tabOrder[currentIndex - 1]);
-  }
+  setSwipeDirection('next');
+  setActiveTab(tabOrder[currentIndex + 1]);
+} else if (deltaX > 0 && currentIndex > 0) {
+  setSwipeDirection('prev');
+  setActiveTab(tabOrder[currentIndex - 1]);
+}
 };
 
 const handlePointerCancel = () => {
@@ -1234,7 +1236,11 @@ const handleSavePurchaseBatch = async (e) => {
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
-      >
+        >
+        <div
+          key={activeTab}
+          className={swipeDirection === 'next' ? 'tab-slide-next' : 'tab-slide-prev'}
+        >
 
         {/* ГЛАВНЫЙ ЭКРАН */}
         {activeTab === 'home' && (
@@ -1880,7 +1886,8 @@ const handleSavePurchaseBatch = async (e) => {
 
           </div>
         )}
-
+        
+       </div>
       </main>
 
       {/* ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ ТОВАРА */}
