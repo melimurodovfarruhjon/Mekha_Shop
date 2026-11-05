@@ -144,13 +144,10 @@ const handlePointerUp = (e) => {
   swipeStart.current = null;
 
   if (deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
-  if (pullDistance >= 55 && !isRefreshing) {
-    setIsRefreshing(true);
+  const finalPullDistance = Math.min(deltaY * 0.55, 90);
 
-    loadProducts().finally(() => {
-      setIsRefreshing(false);
-      setPullDistance(0);
-    });
+  if (finalPullDistance >= 55 && !isRefreshing) {
+    refreshAppData();
   } else {
     setPullDistance(0);
   }
@@ -575,6 +572,30 @@ useEffect(() => {
       setLoading(false);
     }
   };
+
+  const refreshAppData = async () => {
+  if (isRefreshing) return;
+
+  setIsRefreshing(true);
+
+  try {
+    const results = await Promise.all([
+      loadProducts(),
+      fetchRates()
+    ]);
+
+    const productsUpdated = results[0];
+
+    if (!productsUpdated) {
+      console.error('Не удалось обновить каталог товаров');
+    }
+  } catch (error) {
+    console.error('Ошибка обновления данных:', error);
+  } finally {
+    setIsRefreshing(false);
+    setPullDistance(0);
+  }
+};
 
   useEffect(() => {
     fetchRates();
@@ -1317,8 +1338,7 @@ const handleSavePurchaseBatch = async (e) => {
                 size={16}
                 className={isRefreshing ? 'animate-spin' : ''}
               />
-              {isRefreshing ? 'Обновляем каталог...' : 'Отпусти для обновления'}
-            </div>
+              {isRefreshing ? 'Обновляем данные...' : pullDistance >= 55 ? 'Отпусти для обновления' : 'Потяни вниз для обновления'}             </div>
           </div>
 
         <div
