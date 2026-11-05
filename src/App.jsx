@@ -910,7 +910,7 @@ const handleSavePurchaseBatch = async (e) => {
   setShowBatchProductCreation(false);
 };  
 
-  const handleSubmitProduct = (e) => {
+  const handleSubmitProduct = async (e) => {
   e.preventDefault();
 
   const cleanTitle = prodTitle.trim();
@@ -918,60 +918,85 @@ const handleSavePurchaseBatch = async (e) => {
   if (!cleanTitle) {
     setModalAlert({
       title: 'Укажите название',
-      message: 'Введите название модели товара, чтобы сохранить карточку.',
+      message: 'Введите название модели товара.',
       type: 'error'
     });
     return;
   }
 
-  if (editingId) {
-    // При редактировании меняем только название и фотографию.
-    // Остатки и финансовые данные не затрагиваем.
-    setProducts(prev =>
-      prev.map(product =>
-        product.id === editingId
-          ? {
-              ...product,
-              title: cleanTitle,
-              photo: currentPhotoPreview || product.photo
-            }
-          : product
-      )
-    );
-  } else {
-    
-    // Новая модель создаётся без закупки и без складского остатка.
-    const newProduct = {
-      id: Date.now(),
-      title: cleanTitle,
-      photo: currentPhotoPreview ||
-        'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=400',
-      quantity: 0,
-      totalWholesale: 0,
-      wholesaleCurrency: 'CNY',
-      cargoCost: 0,
-      cargoCurrency: 'USD'
-    };
+  const currentEditingId = editingId;
 
-    setProducts(prev => [newProduct, ...prev]);
+  try {
+    if (currentEditingId) {
+      // Обновляем существующий товар в PostgreSQL.
+      const response = await fetch(
+        `${BACKEND_URL}/api/products/${encodeURIComponent(currentEditingId)}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: cleanTitle,
+            photo: currentPhotoPreview || ''
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Не удалось сохранить изменения');
+      }
+
+      // Получаем обновлённый каталог с сервера.
+      await loadProducts();
+
+    } else {
+      // Новую модель пока создаём локально.
+      const newProduct = {
+        id: Date.now(),
+        title: cleanTitle,
+        photo: currentPhotoPreview ||
+          'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=400',
+        quantity: 0,
+        totalWholesale: 0,
+        wholesaleCurrency: 'CNY',
+        cargoCost: 0,
+        cargoCurrency: 'USD'
+      };
+
+      setProducts(prev => [newProduct, ...prev]);
+    }
+
+    setEditingId(null);
+    setProdTitle('');
+    setProdQty('');
+    setProdWholesale('');
+    setProdCargoCost('');
+    setSelectedImageFile(null);
+    setCurrentPhotoPreview(null);
+    setIsAddModalOpen(false);
+
+    setModalAlert({
+      title: currentEditingId
+        ? 'Изменения сохранены'
+        : 'Модель добавлена',
+      message: currentEditingId
+        ? 'Название и фотография товара обновлены на сервере.'
+        : 'Модель добавлена. Для появления остатка оформите поставку.',
+      type: 'success'
+    });
+
+  } catch (error) {
+    console.error('Ошибка сохранения товара:', error);
+
+    setModalAlert({
+      title: 'Ошибка сохранения',
+      message: error.message || 'Не удалось связаться с сервером.',
+      type: 'error'
+    });
   }
-
-  setEditingId(null);
-  setProdTitle('');
-  setProdQty('');
-  setProdWholesale('');
-  setProdCargoCost('');
-  setSelectedImageFile(null);
-  setCurrentPhotoPreview(null);
-  setIsAddModalOpen(false);
-
-  setModalAlert({
-    title: editingId ? 'Изменения сохранены' : 'Модель добавлена',
-    message: editingId
-      ? 'Название и фотография товара обновлены.'
-      : 'Модель добавлена в каталог. Чтобы получить складской остаток, зарегистрируйте новую поставку.',
-    type: 'success'
-  });
 };
 
   const handleStartEdit = (p) => {
