@@ -75,20 +75,44 @@ const swipeStart = useRef(null);
 
 const tabOrder = ['home', 'products', 'calc', 'courier'];
 
-const handleSwipeStart = (e) => {
-  if (
-    e.target.closest(
-      'input, textarea, select, button, [data-no-swipe]'
-    )
-  ) {
+const handlePointerDown = (e) => {
+  if (e.pointerType !== 'touch') return;
+
+  if (e.target.closest('input, textarea, select, button, [data-no-swipe]')) {
     swipeStart.current = null;
     return;
   }
 
   swipeStart.current = {
-    x: e.touches[0].clientX,
-    y: e.touches[0].clientY
+    x: e.clientX,
+    y: e.clientY
   };
+};
+
+const handlePointerUp = (e) => {
+  if (!swipeStart.current || e.pointerType !== 'touch') return;
+
+  const deltaX = e.clientX - swipeStart.current.x;
+  const deltaY = e.clientY - swipeStart.current.y;
+
+  swipeStart.current = null;
+
+  if (
+    Math.abs(deltaX) < 60 ||
+    Math.abs(deltaX) < Math.abs(deltaY) * 1.3
+  ) return;
+
+  const currentIndex = tabOrder.indexOf(activeTab);
+
+  if (deltaX < 0 && currentIndex < tabOrder.length - 1) {
+    setActiveTab(tabOrder[currentIndex + 1]);
+  } else if (deltaX > 0 && currentIndex > 0) {
+    setActiveTab(tabOrder[currentIndex - 1]);
+  }
+};
+
+const handlePointerCancel = () => {
+  swipeStart.current = null;
 };
 
 const handleSwipeEnd = (e) => {
@@ -1228,8 +1252,9 @@ const handleSavePurchaseBatch = async (e) => {
       {/* Основной контент */}
       <main
         className="flex-1 p-3 pb-24 space-y-4 overflow-y-auto touch-pan-y"
-        onTouchStart={handleSwipeStart}
-        onTouchEnd={handleSwipeEnd}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       >
 
         {/* ГЛАВНЫЙ ЭКРАН */}
