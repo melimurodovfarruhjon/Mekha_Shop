@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2 } from 'lucide-react';
 
 // --- КОНФИГУРАЦИЯ БОТА И СЕРВЕРА ---
-const BACKEND_URL = "https://mekha-server.onrender.com"; // Ваша ссылка с Render
+const BACKEND_URL = "https://mekhaserver-production.up.railway.app"; // Ваша ссылка с Render
 
 // --- Компонент загрузки фото ---
 const ImageUploader = ({ onImageUpload, currentPreview, isDarkMode }) => {
@@ -3435,6 +3435,7 @@ const handleSavePurchaseBatch = async (e) => {
     </div>
   );
 })()}
+
 
 
             </div>
