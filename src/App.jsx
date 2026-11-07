@@ -695,7 +695,7 @@ useEffect(() => {
 
   const fetchDeliveryNotifications = async () => {
     try {
-      const response = await fetch(\`\${BACKEND_URL}/api/delivery-notifications?limit=15\`);
+      const response = await fetch(`${BACKEND_URL}/api/delivery-notifications?limit=15`);
       if (!response.ok) throw new Error('Не удалось загрузить уведомления');
       const data = await response.json();
       if (data.success && Array.isArray(data.notifications)) setDeliveryNotifications(data.notifications);
@@ -1620,13 +1620,13 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
             {/* УВЕДОМЛЕНИЯ О ДОСТАВКЕ */}
-            <div className={\`rounded-2xl border shadow-sm overflow-hidden \${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}\`}>
+            <div className={`rounded-2xl border shadow-sm overflow-hidden ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
               <div className="flex items-center justify-between px-3.5 py-3 border-b border-gray-200/15">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center"><Bell size={16} /></div>
                   <div><h3 className="text-xs font-bold">Уведомления о доставке</h3><p className="text-[10px] text-gray-400">Подтверждения курьеров из Telegram</p></div>
                 </div>
-                <span className={\`text-[10px] font-semibold px-2 py-1 rounded-full \${isDarkMode ? 'bg-[#3D4754] text-gray-200' : 'bg-rose-50 text-[#58111A]'}\`}>{deliveryNotifications.length}</span>
+                <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${isDarkMode ? 'bg-[#3D4754] text-gray-200' : 'bg-rose-50 text-[#58111A]'}`}>{deliveryNotifications.length}</span>
               </div>
               <div className="divide-y divide-gray-200/10">
                 {notificationsLoading ? (
@@ -1669,7 +1669,7 @@ const handleSavePurchaseBatch = async (e) => {
                 }`}>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-gray-400">USD / TJS</span>
-                    {rates.USD_change !== null && <span className={\`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md \${rates.USD_change >= 0 ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}\`}>{rates.USD_change >= 0 ? <TrendingUp size={12} className="mr-0.5" /> : <TrendingDown size={12} className="mr-0.5" />}{rates.USD_change > 0 ? '+' : ''}{rates.USD_change.toFixed(5)}%</span>}
+                    {rates.USD_change !== null && <span className={`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md ${rates.USD_change >= 0 ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}`}>{rates.USD_change >= 0 ? <TrendingUp size={12} className="mr-0.5" /> : <TrendingDown size={12} className="mr-0.5" />}{rates.USD_change > 0 ? '+' : ''}{rates.USD_change.toFixed(5)}%</span>}
                   </div>
                   <div className="font-extrabold text-base">
                     {rates.USD_TJS.toFixed(6)} <span className="text-xs font-medium text-gray-400">сом</span>
@@ -1681,7 +1681,7 @@ const handleSavePurchaseBatch = async (e) => {
                 }`}>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-gray-400">CNY / USD</span>
-                    {rates.CNY_change !== null && <span className={\`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md \${rates.CNY_change >= 0 ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}\`}>{rates.CNY_change >= 0 ? <TrendingUp size={12} className="mr-0.5" /> : <TrendingDown size={12} className="mr-0.5" />}{rates.CNY_change > 0 ? '+' : ''}{rates.CNY_change.toFixed(5)}%</span>}
+                    {rates.CNY_change !== null && <span className={`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md ${rates.CNY_change >= 0 ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}`}>{rates.CNY_change >= 0 ? <TrendingUp size={12} className="mr-0.5" /> : <TrendingDown size={12} className="mr-0.5" />}{rates.CNY_change > 0 ? '+' : ''}{rates.CNY_change.toFixed(5)}%</span>}
                   </div>
                   <div className="font-extrabold text-base">
                     ${rates.CNY_USD.toFixed(6)} <span className="text-xs font-medium text-gray-400">¥</span>
@@ -1689,7 +1689,7 @@ const handleSavePurchaseBatch = async (e) => {
                 </div>
               </div>
 
-              <div className={\`p-3 rounded-2xl border text-[10px] flex flex-col gap-1 \${isDarkMode ? 'bg-[#2B323D] border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-500'}\`}>
+              <div className={`p-3 rounded-2xl border text-[10px] flex flex-col gap-1 ${isDarkMode ? 'bg-[#2B323D] border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
                 <div className="flex items-center gap-1.5"><RefreshCw size={12} className={loading ? 'animate-spin' : ''} /><span>{loading ? 'Проверяем актуальный курс…' : 'Автоматическая проверка каждые 5 минут'}</span></div>
                 <span>Источник обновил данные: {rates.sourceUpdatedAt ? new Date(rates.sourceUpdatedAt).toLocaleString('ru-RU') : 'ожидаем первую загрузку'}</span>
                 <span>Последняя проверка: {rates.checkedAt ? new Date(rates.checkedAt).toLocaleTimeString('ru-RU') : '—'}. Частота изменения зависит от поставщика данных.</span>
