@@ -2714,22 +2714,25 @@ const handleSavePurchaseBatch = async (e) => {
     const quantity = Number(item.quantity);
     const variants = item.variants || [];
 
-    const variantsTotal = variants.reduce(
-      (sum, variant) => sum + (Number(variant.quantity) || 0),
-      0
-    );
+    const variantsTotal = variants.length
+      ? variants.reduce((sum, variant) => sum + (Number(variant.quantity) || 0), 0)
+      : quantity;
 
     return (
       Number.isInteger(quantity) &&
       quantity > 0 &&
-      variants.length > 0 &&
-      variants.every(variant =>
-        String(variant.color || '').trim() &&
-        String(variant.size || '').trim() &&
-        Number.isInteger(Number(variant.quantity)) &&
-        Number(variant.quantity) >= 0
-      ) &&
-      variantsTotal === quantity
+      (
+        variants.length === 0 ||
+        (
+          variants.every(variant =>
+            String(variant.color || '').trim() &&
+            String(variant.size || '').trim() &&
+            Number.isInteger(Number(variant.quantity)) &&
+            Number(variant.quantity) >= 0
+          ) &&
+          variantsTotal === quantity
+        )
+      )
     );
   });
 
@@ -2753,23 +2756,25 @@ const handleSavePurchaseBatch = async (e) => {
 
         const quantity = Number(item.quantity) || 0;
 
-        const variantsTotal = variants.reduce(
-          (sum, variant) =>
-            sum + (Number(variant.quantity) || 0),
-          0
-        );
+        const variantsTotal = variants.length
+          ? variants.reduce((sum, variant) => sum + (Number(variant.quantity) || 0), 0)
+          : quantity;
 
         const isValid =
           Number.isInteger(Number(item.quantity)) &&
           quantity > 0 &&
-          variants.length > 0 &&
-          variants.every(variant =>
-            String(variant.color || '').trim() &&
-            String(variant.size || '').trim() &&
-            Number.isInteger(Number(variant.quantity)) &&
-            Number(variant.quantity) >= 0
-          ) &&
-          variantsTotal === quantity;
+          (
+            variants.length === 0 ||
+            (
+              variants.every(variant =>
+                String(variant.color || '').trim() &&
+                String(variant.size || '').trim() &&
+                Number.isInteger(Number(variant.quantity)) &&
+                Number(variant.quantity) >= 0
+              ) &&
+              variantsTotal === quantity
+            )
+          );
 
         return (
           <div
@@ -2840,6 +2845,12 @@ const handleSavePurchaseBatch = async (e) => {
                 </p>
               </div>
 
+              {variants.length === 0 && (
+                <div className={`rounded-xl border border-dashed p-3 mb-3 text-xs ${isDarkMode ? 'border-gray-700 text-gray-400' : 'border-gray-300 text-gray-500'}`}>
+                  Цвета и размеры не указаны. Это допустимо — всё количество будет записано как обычный товар без вариантов.
+                </div>
+              )}
+
               {variants.map((variant, variantIndex) => (
                 <div
                   key={variantIndex}
@@ -2854,17 +2865,14 @@ const handleSavePurchaseBatch = async (e) => {
                       Вариант {variantIndex + 1}
                     </span>
 
-                    {variants.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          removeBatchVariant(itemIndex, variantIndex)
-                        }
-                        className="text-red-500 text-xs"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeBatchVariant(itemIndex, variantIndex)}
+                      className="text-red-500 text-xs flex items-center gap-1"
+                    >
+                      <Trash2 size={15} />
+                      Убрать
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -3288,24 +3296,26 @@ const handleSavePurchaseBatch = async (e) => {
     const quantity = Number(item.quantity);
     const variants = item.variants || [];
 
-    const variantsTotal = variants.reduce(
-      (sum, variant) =>
-        sum + (Number(variant.quantity) || 0),
-      0
-    );
+    const variantsTotal = variants.length
+      ? variants.reduce((sum, variant) => sum + (Number(variant.quantity) || 0), 0)
+      : quantity;
 
     return (
       item.productId &&
       Number.isInteger(quantity) &&
       quantity > 0 &&
-      variants.length > 0 &&
-      variants.every(variant =>
-        String(variant.color || '').trim() &&
-        String(variant.size || '').trim() &&
-        Number.isInteger(Number(variant.quantity)) &&
-        Number(variant.quantity) >= 0
+      (
+        variants.length === 0 ||
+        (
+          variants.every(variant =>
+            String(variant.color || '').trim() &&
+            String(variant.size || '').trim() &&
+            Number.isInteger(Number(variant.quantity)) &&
+            Number(variant.quantity) >= 0
+          ) &&
+          variantsTotal === quantity
+        )
       ) &&
-      variantsTotal === quantity &&
       item.wholesaleAmount !== '' &&
       item.cargoAmount !== '' &&
       Number.isFinite(Number(item.wholesaleAmount)) &&
@@ -3387,6 +3397,9 @@ const handleSavePurchaseBatch = async (e) => {
                   Цвета и размеры
                 </p>
 
+                {variants.length === 0 && (
+                  <p className="text-xs text-gray-500">Без вариантов — {quantity} шт. обычного товара</p>
+                )}
                 {variants.map((variant, index) => (
                   <div
                     key={index}
