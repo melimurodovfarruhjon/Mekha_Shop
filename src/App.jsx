@@ -77,6 +77,7 @@ const swipeStart = useRef(null);
 const [swipeOffset, setSwipeOffset] = useState(0);
 const [isDragging, setIsDragging] = useState(false);
 const [pullDistance, setPullDistance] = useState(0);
+const pullDistanceRef = useRef(0);
 const [isRefreshing, setIsRefreshing] = useState(false);
 const tabOrder = ['home', 'products', 'calc', 'courier'];
 
@@ -90,6 +91,7 @@ const handleTouchStart = (e) => {
   };
 
   setSwipeOffset(0);
+  pullDistanceRef.current = 0;
   setPullDistance(0);
   setIsDragging(false);
 };
@@ -107,7 +109,9 @@ const handleTouchMove = (e) => {
     Math.abs(deltaY) > Math.abs(deltaX) * 1.2 &&
     swipeStart.current.section?.scrollTop <= 0
   ) {
-    setPullDistance(Math.min(deltaY * 0.55, 90));
+    const nextPullDistance = Math.min(deltaY * 0.65, 110);
+    pullDistanceRef.current = nextPullDistance;
+    setPullDistance(nextPullDistance);
     return;
   }
 
@@ -138,9 +142,10 @@ const handleTouchEnd = (e) => {
   swipeStart.current = null;
 
   if (deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
-    if (pullDistance >= 55 && !isRefreshing) {
+    if (pullDistanceRef.current >= 65 && !isRefreshing) {
       refreshAppData();
     } else {
+      pullDistanceRef.current = 0;
       setPullDistance(0);
     }
 
@@ -166,6 +171,7 @@ const handleTouchEnd = (e) => {
 
 const handleTouchCancel = () => {
   swipeStart.current = null;
+  pullDistanceRef.current = 0;
   setSwipeOffset(0);
   setPullDistance(0);
   setIsDragging(false);
@@ -685,29 +691,15 @@ useEffect(() => {
     }
   };
 
-  const refreshAppData = async () => {
-  if (isRefreshing) return;
+  const refreshAppData = () => {
+    if (isRefreshing) return;
 
-  setIsRefreshing(true);
-
-  try {
-    const results = await Promise.all([
-      loadProducts(),
-      fetchRates()
-    ]);
-
-    const productsUpdated = results[0];
-
-    if (!productsUpdated) {
-      console.error('Не удалось обновить каталог товаров');
-    }
-  } catch (error) {
-    console.error('Ошибка обновления данных:', error);
-  } finally {
-    setIsRefreshing(false);
-    setPullDistance(0);
-  }
-};
+    setIsRefreshing(true);
+    // Полная перезагрузка приложения: заново загружаются интерфейс и данные с сервера.
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 250);
+  };
 
   useEffect(() => {
     fetchRates();
@@ -1570,7 +1562,7 @@ const handleSavePurchaseBatch = async (e) => {
               transition: isRefreshing ? 'transform 200ms ease' : 'none'
             }}
           >
-            <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg border border-rose-100 text-[#58111A] text-xs font-semibold">
+            <div className={`flex items-center gap-2 rounded-full px-4 py-2 shadow-xl border text-xs font-semibold ${isDarkMode ? 'bg-[#58111A] border-rose-300/40 text-white' : 'bg-white border-rose-200 text-[#58111A]'}`}>
               <RefreshCw
                 size={16}
                 className={isRefreshing ? 'animate-spin' : ''}
@@ -1982,7 +1974,7 @@ const handleSavePurchaseBatch = async (e) => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Отправка заказов в Telegram</h2>
-              <span className="text-[10px] bg-rose-100 text-[#58111A] px-2 py-0.5 rounded-full font-medium">Всего: {deliveries.length}</span>
+              <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border shadow-sm ${isDarkMode ? 'bg-[#58111A] text-white border-rose-300/40' : 'bg-rose-100 text-[#58111A] border-rose-200'}`}>Всего: {deliveries.length}</span>
             </div>
 
             {/* Форма отправки */}
