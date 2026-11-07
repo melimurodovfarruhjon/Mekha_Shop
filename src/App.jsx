@@ -2283,7 +2283,7 @@ const handleSavePurchaseBatch = async (e) => {
             maximumFractionDigits: 2
           })} сом.`;
         const batchTitle = batch => {
-          const firstLine = String(batch.notes || '').split(/\\r?\\n/)[0].trim();
+          const firstLine = String(batch.notes || '').split(/\r?\n/)[0].trim();
           return firstLine || `Поставка №${batch.batchNumber}`;
         };
 
