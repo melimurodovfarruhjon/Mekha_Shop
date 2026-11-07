@@ -1119,8 +1119,13 @@ const handleSavePurchaseBatch = async (e) => {
   const productId = productToDelete.id;
 
   try {
+    // Close the confirmation overlay first so the product card animation is visible.
+    setProductToDelete(null);
+    setDeleteConfirmationStep(1);
     setEvaporatingProductId(productId);
-    await new Promise(resolve => setTimeout(resolve, 900));
+
+    // Allow React to render the smoke animation before calling the API.
+    await new Promise(resolve => setTimeout(resolve, 950));
 
     const response = await fetch(
       `${BACKEND_URL}/api/products/${encodeURIComponent(productId)}`,
