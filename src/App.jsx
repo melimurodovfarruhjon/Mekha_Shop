@@ -2268,25 +2268,22 @@ const handleSavePurchaseBatch = async (e) => {
         const totalDelivered = items.reduce((sum, item) => sum + Number(item.deliveredQuantity || 0), 0);
         const totalSold = items.reduce((sum, item) => sum + Number(item.soldQuantity || 0), 0);
         const totalRemaining = items.reduce((sum, item) => sum + Number(item.remainingQuantity || 0), 0);
-        const hasMissingPrices = items.some(item => Number(item.soldQuantity) > 0 && Number(item.salePriceTjs) <= 0);
-        const totalRevenue = items.reduce((sum, item) => {
-          const sold = Number(item.soldQuantity) || 0;
-          const price = Number(item.salePriceTjs) || 0;
-          return sum + (price > 0 ? sold * price : 0);
-        }, 0);
-        const totalProfit = items.reduce((sum, item) => {
-          const sold = Number(item.soldQuantity) || 0;
-          const price = Number(item.salePriceTjs) || 0;
-          const cost = Number(item.unitCostTjs) || 0;
-          return sum + (price > 0 ? sold * (price - cost) : 0);
-        }, 0);
+        const hasMissingPrices = items.some(item => Boolean(item.hasMissingSalePrice));
+        const totalRevenue = items.reduce(
+          (sum, item) => sum + (Number(item.revenueTjs) || 0),
+          0
+        );
+        const totalProfit = items.reduce(
+          (sum, item) => sum + (Number(item.profitTjs) || 0),
+          0
+        );
         const formatReportMoney = value =>
           `${Number(value || 0).toLocaleString('ru-RU', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           })} сом.`;
         const batchTitle = batch => {
-          const firstLine = String(batch.notes || '').split('\\n')[0].trim();
+          const firstLine = String(batch.notes || '').split(/\\r?\\n/)[0].trim();
           return firstLine || `Поставка №${batch.batchNumber}`;
         };
 
@@ -2385,11 +2382,9 @@ const handleSavePurchaseBatch = async (e) => {
                           <tbody>
                             {items.map(item => {
                               const sold = Number(item.soldQuantity) || 0;
-                              const price = Number(item.salePriceTjs) || 0;
-                              const cost = Number(item.unitCostTjs) || 0;
-                              const hasPrice = price > 0;
-                              const revenue = hasPrice ? sold * price : 0;
-                              const profit = hasPrice ? sold * (price - cost) : 0;
+                              const revenue = Number(item.revenueTjs) || 0;
+                              const profit = Number(item.profitTjs) || 0;
+                              const hasMissingPrice = Boolean(item.hasMissingSalePrice);
 
                               return (
                                 <tr key={item.id} className="border-t border-gray-200/10">
@@ -2407,12 +2402,12 @@ const handleSavePurchaseBatch = async (e) => {
                                   <td className="px-3 py-3 text-right tabular-nums">{sold}</td>
                                   <td className="px-3 py-3 text-right tabular-nums">{item.remainingQuantity}</td>
                                   <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
-                                    {sold === 0 ? '0.00' : hasPrice ? formatReportMoney(revenue) : 'Цена не указана'}
+                                    {sold === 0 ? '0.00' : hasMissingPrice && revenue === 0 ? 'Цена не указана' : `${formatReportMoney(revenue)}${hasMissingPrice ? ' *' : ''}`}
                                   </td>
                                   <td className={`px-3 py-3 text-right whitespace-nowrap tabular-nums font-semibold ${
                                     profit >= 0 ? 'text-emerald-500' : 'text-red-500'
                                   }`}>
-                                    {sold === 0 ? '0.00' : hasPrice ? formatReportMoney(profit) : '—'}
+                                    {sold === 0 ? '0.00' : hasMissingPrice && revenue === 0 ? '—' : `${formatReportMoney(profit)}${hasMissingPrice ? ' *' : ''}`}
                                   </td>
                                 </tr>
                               );
@@ -2441,7 +2436,7 @@ const handleSavePurchaseBatch = async (e) => {
                       </div>
                       {hasMissingPrices && (
                         <p className="text-[11px] text-amber-500">
-                          Внимание: у части проданных товаров не указана цена продажи. Итоги не включают эти позиции.
+                          Примечание: * — финансовые данные частичные, так как цена продажи не была зафиксирована для части продаж.
                         </p>
                       )}
                     </div>
