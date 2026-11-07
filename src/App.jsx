@@ -1648,79 +1648,6 @@ const handleSavePurchaseBatch = async (e) => {
 
           <div className="space-y-4">
             
-            <div className="bg-gradient-to-br from-[#58111A] to-[#3d0b12] text-white p-5 rounded-3xl shadow-md space-y-3 relative overflow-hidden">
-              <div className="absolute right-[-10px] bottom-[-20px] opacity-10 text-8xl font-bold">M</div>
-              <span className="text-[10px] bg-white/20 text-rose-100 px-2.5 py-1 rounded-full font-semibold">
-                Бизнес-Монитор
-              </span>
-              <div>
-                <h2 className="text-base font-bold">Главная панель Mekha Shop ✨</h2>
-                <p className="text-xs text-rose-200 mt-0.5">Оперативные новости валютного рынка и аналитика.</p>
-              </div>
-            </div>
-
-            {/* НОВОСТИ ВАЛЮТ */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider flex items-center gap-1.5">
-                <RefreshCw size={14} /> Мониторинг курсов валют
-              </h3>
-              <div className={`rounded-2xl border p-3 shadow-sm ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400">USD / TJS</p>
-                    <p className="text-xl font-extrabold tracking-tight">{rates.USD_TJS.toFixed(6)} <span className="text-xs font-semibold text-gray-400">TJS</span></p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Курс доллара к сомони</p>
-                  </div>
-                  <span className={`text-[9px] px-2 py-1 rounded-full ${loading ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>{loading ? 'Обновление…' : 'Проверка 3 сек.'}</span>
-                </div>
-                <div className="mt-2 h-24 overflow-hidden rounded-xl">
-                  <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="w-full h-full">
-                    <defs><linearGradient id="mekhaRateFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#B45B68" stopOpacity="0.42" /><stop offset="100%" stopColor="#B45B68" stopOpacity="0.02" /></linearGradient></defs>
-                    <polygon points={rateChartArea} fill="url(#mekhaRateFill)" />
-                    <polyline points={rateChartPoints} fill="none" stroke="#B45B68" strokeWidth="0.9" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div className="flex items-center justify-between text-[9px] text-gray-400 mt-1">
-                  <span>{rateHistory.length ? new Date(rateHistory[0].at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
-                  <span>График-горы, без свечей</span>
-                  <span>Сейчас</span>
-                </div>
-                <p className="text-[9px] text-gray-500 mt-2">Проверяем источник каждые 3 секунды. Линия меняется только при поступлении нового значения курса — без искусственных колебаний.</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className={`p-3.5 rounded-2xl border shadow-sm space-y-1.5 ${
-                  isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
-                }`}>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-gray-400">USD / TJS</span>
-                    {rates.USD_change !== null && <span className={`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md ${rates.USD_change >= 0 ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}`}>{rates.USD_change >= 0 ? <TrendingUp size={12} className="mr-0.5" /> : <TrendingDown size={12} className="mr-0.5" />}{rates.USD_change > 0 ? '+' : ''}{rates.USD_change.toFixed(5)}%</span>}
-                  </div>
-                  <div className="font-extrabold text-base">
-                    {rates.USD_TJS.toFixed(6)} <span className="text-xs font-medium text-gray-400">сом</span>
-                  </div>
-                </div>
-
-                <div className={`p-3.5 rounded-2xl border shadow-sm space-y-1.5 ${
-                  isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
-                }`}>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-gray-400">CNY / USD</span>
-                    {rates.CNY_change !== null && <span className={`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md ${rates.CNY_change >= 0 ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}`}>{rates.CNY_change >= 0 ? <TrendingUp size={12} className="mr-0.5" /> : <TrendingDown size={12} className="mr-0.5" />}{rates.CNY_change > 0 ? '+' : ''}{rates.CNY_change.toFixed(5)}%</span>}
-                  </div>
-                  <div className="font-extrabold text-base">
-                    ${rates.CNY_USD.toFixed(6)} <span className="text-xs font-medium text-gray-400">¥</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={`p-3 rounded-2xl border text-[10px] flex flex-col gap-1 ${isDarkMode ? 'bg-[#2B323D] border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
-                <div className="flex items-center gap-1.5"><RefreshCw size={12} className={loading ? 'animate-spin' : ''} /><span>{loading ? 'Проверяем актуальный курс…' : 'Проверка источника каждые 3 секунды'}</span></div>
-                <span>Источник обновил данные: {rates.sourceUpdatedAt ? new Date(rates.sourceUpdatedAt).toLocaleString('ru-RU') : 'ожидаем первую загрузку'}</span>
-                <span>Последняя проверка: {rates.checkedAt ? new Date(rates.checkedAt).toLocaleTimeString('ru-RU') : '—'}. Частота изменения зависит от поставщика данных.</span>
-              </div>
-            </div>
-
             {/* ФИНАНСОВАЯ СВОДКА И СКЛАД */}
             <div className={`rounded-2xl border p-3 shadow-sm space-y-3 ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
               <div className="flex items-center justify-between">
@@ -1795,6 +1722,33 @@ const handleSavePurchaseBatch = async (e) => {
                 </div>
               );
             })()}
+
+            {/* КОМПАКТНЫЙ МОНИТОРИНГ ВАЛЮТ */}
+            <div className={`rounded-2xl border p-3 shadow-sm space-y-2 ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Курсы валют</h3>
+                <span className="text-[9px] text-gray-400">Источник: ER API</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 items-center">
+                <div>
+                  <p className="text-[9px] font-bold text-gray-400">USD / TJS</p>
+                  <p className="text-lg font-extrabold leading-tight">{rates.USD_TJS.toFixed(6)} <span className="text-[10px] font-semibold text-gray-400">TJS</span></p>
+                  {rates.USD_change !== null && <span className={`text-[9px] font-semibold ${rates.USD_change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{rates.USD_change > 0 ? '+' : ''}{rates.USD_change.toFixed(5)}%</span>}
+                </div>
+                <div className="h-12 overflow-hidden rounded-lg">
+                  <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="w-full h-full">
+                    <defs><linearGradient id="mekhaRateFillCompact" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#B45B68" stopOpacity="0.38" /><stop offset="100%" stopColor="#B45B68" stopOpacity="0.02" /></linearGradient></defs>
+                    <polygon points={rateChartArea} fill="url(#mekhaRateFillCompact)" />
+                    <polyline points={rateChartPoints} fill="none" stroke="#B45B68" strokeWidth="1.1" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex items-center justify-between border-t border-gray-200/15 pt-2">
+                <div><p className="text-[9px] text-gray-400">CNY / USD</p><p className="text-sm font-bold">{rates.CNY_USD.toFixed(6)} <span className="text-[9px] font-medium text-gray-400">USD</span></p></div>
+                {rates.CNY_change !== null && <span className={`text-[9px] font-semibold ${rates.CNY_change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{rates.CNY_change > 0 ? '+' : ''}{rates.CNY_change.toFixed(5)}%</span>}
+                <span className="text-[9px] text-gray-400">{rates.sourceUpdatedAt ? new Date(rates.sourceUpdatedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+              </div>
+            </div>
 
             {/* Быстрые действия */}
             <div className="grid grid-cols-2 gap-2">
