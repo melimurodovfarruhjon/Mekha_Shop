@@ -554,6 +554,8 @@ useEffect(() => {
 
   const createEmptyBatchItem = () => ({
     productId: '',
+    productTitle: '',
+    productPhoto: '',
     quantity: '1',
     wholesaleAmount: '',
     wholesaleCurrency: 'CNY',
@@ -856,8 +858,13 @@ const handleSavePurchaseBatch = async (e) => {
   const payloadItems = [];
 
   for (const item of batchItems) {
-    const product = products.find(
+    const catalogProduct = products.find(
       p => String(p.id) === String(item.productId) || String(p.legacyId || '') === String(item.productId)
+    );
+    const product = catalogProduct || (
+      item.productTitle
+        ? { title: item.productTitle, photo: item.productPhoto || '' }
+        : null
     );
 
     if (!product) {
@@ -1046,7 +1053,9 @@ const handleSavePurchaseBatch = async (e) => {
   ...prev,
   {
     ...createEmptyBatchItem(),
-    productId: String(newProduct.id)
+    productId: String(newProduct.id),
+    productTitle: newProduct.title,
+    productPhoto: newProduct.photo
   }
 ]);
 
@@ -2513,6 +2522,8 @@ const handleSavePurchaseBatch = async (e) => {
 
                     const newItem = createEmptyBatchItem();
                     newItem.productId = String(product.id);
+                    newItem.productTitle = product.title;
+                    newItem.productPhoto = product.photo || '';
 
                     return [...selectedItems, newItem];
                   });
@@ -2750,7 +2761,10 @@ const handleSavePurchaseBatch = async (e) => {
       {batchItems.map((item, itemIndex) => {
         const product = products.find(
           p => String(p.id) === String(item.productId) || String(p.legacyId || '') === String(item.productId)
-        );
+        ) || (item.productTitle ? {
+          title: item.productTitle,
+          photo: item.productPhoto || ''
+        } : null);
 
         const variants = item.variants || [];
 
@@ -3357,7 +3371,10 @@ const handleSavePurchaseBatch = async (e) => {
         {batchItems.map((item, itemIndex) => {
           const product = products.find(
             p => String(p.id) === String(item.productId) || String(p.legacyId || '') === String(item.productId)
-          );
+          ) || (item.productTitle ? {
+            title: item.productTitle,
+            photo: item.productPhoto || ''
+          } : null);
 
           const quantity = Number(item.quantity) || 0;
           const unitCost = calculateBatchItemCost(item);
