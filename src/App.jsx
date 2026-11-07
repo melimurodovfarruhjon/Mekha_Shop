@@ -188,6 +188,7 @@ const handleTouchCancel = () => {
   const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [notificationsExpanded, setNotificationsExpanded] = useState(false);
   const [rateHistory, setRateHistory] = useState([]);
+  const [dashboardSummary, setDashboardSummary] = useState(null);
 
   // Тема
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -696,6 +697,17 @@ useEffect(() => {
     }
   };
 
+  const fetchDashboardSummary = async () => {
+    try {
+      const response = await fetch(\`\${BACKEND_URL}/api/dashboard-summary\`);
+      if (!response.ok) throw new Error('Не удалось загрузить сводку');
+      const data = await response.json();
+      if (data.success) setDashboardSummary(data.summary);
+    } catch (error) {
+      console.error('Dashboard summary load failed:', error);
+    }
+  };
+
   const fetchDeliveryNotifications = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/delivery-notifications?limit=50`);
@@ -726,8 +738,14 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
+    fetchDashboardSummary();
+    const summaryInterval = window.setInterval(fetchDashboardSummary, 30000);
+    return () => window.clearInterval(summaryInterval);
+  }, []);
+
+  useEffect(() => {
     fetchDeliveryNotifications();
-    const stream = new EventSource(\`\${BACKEND_URL}/api/delivery-notifications/stream\`);
+    const stream = new EventSource(`${BACKEND_URL}/api/delivery-notifications/stream`);
     stream.onmessage = (event) => {
       try {
         const notification = JSON.parse(event.data);
@@ -755,9 +773,9 @@ useEffect(() => {
   const rateChartPoints = chartValues.map((value, index) => {
     const x = chartValues.length === 1 ? 50 : (index / (chartValues.length - 1)) * 100;
     const y = 36 - ((value - chartMin) / chartRange) * 28;
-    return \`\${x},\${y}\`;
+    return `${x},${y}`;
   }).join(' ');
-  const rateChartArea = \`0,40 \${rateChartPoints} 100,40\`;
+  const rateChartArea = `0,40 ${rateChartPoints} 100,40`;
 
   const totalWholesaleCNY = unitCNY * qty;
   const totalWholesaleUSD = totalWholesaleCNY * rates.CNY_USD;
@@ -1646,14 +1664,14 @@ const handleSavePurchaseBatch = async (e) => {
               <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider flex items-center gap-1.5">
                 <RefreshCw size={14} /> Мониторинг курсов валют
               </h3>
-              <div className={\`rounded-2xl border p-3 shadow-sm \${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}\`}>
+              <div className={`rounded-2xl border p-3 shadow-sm ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400">USD / TJS</p>
                     <p className="text-xl font-extrabold tracking-tight">{rates.USD_TJS.toFixed(6)} <span className="text-xs font-semibold text-gray-400">TJS</span></p>
                     <p className="text-[10px] text-gray-400 mt-0.5">Курс доллара к сомони</p>
                   </div>
-                  <span className={\`text-[9px] px-2 py-1 rounded-full \${loading ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}\`}>{loading ? 'Обновление…' : 'Проверка 3 сек.'}</span>
+                  <span className={`text-[9px] px-2 py-1 rounded-full ${loading ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>{loading ? 'Обновление…' : 'Проверка 3 сек.'}</span>
                 </div>
                 <div className="mt-2 h-24 overflow-hidden rounded-xl">
                   <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="w-full h-full">
@@ -1703,19 +1721,50 @@ const handleSavePurchaseBatch = async (e) => {
               </div>
             </div>
 
+            {/* ФИНАНСОВАЯ СВОДКА И СКЛАД */}
+            <div className={\`\rounded-2xl border p-3 shadow-sm space-y-3 \${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}\`}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Сводка за сегодня</h3>
+                <span className="text-[9px] text-gray-400">Обновление 30 сек.</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className={\`\rounded-xl p-2.5 \${isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50/70'}\`}>
+                  <p className="text-[10px] text-gray-400">Выручка</p>
+                  <p className="text-base font-extrabold mt-0.5">{Number(dashboardSummary?.revenueTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
+                </div>
+                <div className={\`\rounded-xl p-2.5 \${isDarkMode ? 'bg-[#343D49]' : 'bg-emerald-50/70'}\`}>
+                  <p className="text-[10px] text-gray-400">Чистая прибыль*</p>
+                  <p className={\`text-base font-extrabold mt-0.5 \${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}\`}>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div><p className="text-sm font-bold">{dashboardSummary?.deliveredToday ?? '—'}</p><p className="text-[9px] text-gray-400">Доставлено</p></div>
+                <div><p className="text-sm font-bold">{dashboardSummary?.pendingOrders ?? '—'}</p><p className="text-[9px] text-gray-400">В пути</p></div>
+                <div><p className="text-sm font-bold">{dashboardSummary?.unitsSold ?? '—'}</p><p className="text-[9px] text-gray-400">Продано шт.</p></div>
+              </div>
+              <div className="border-t border-gray-200/15 pt-2 flex items-center justify-between gap-2">
+                <div><p className="text-[10px] font-semibold">Склад</p><p className="text-[9px] text-gray-400">Товаров с остатком: {dashboardSummary?.productsInStock ?? '—'}</p></div>
+                <div className="flex gap-2 text-[9px] font-semibold">
+                  <span className="text-amber-600">Мало: {dashboardSummary?.lowStockProducts ?? '—'}</span>
+                  <span className="text-rose-600">Нет: {dashboardSummary?.outOfStockProducts ?? '—'}</span>
+                </div>
+              </div>
+              <p className="text-[9px] text-gray-400">*Прибыль рассчитана по подтверждённым продажам и сохранённой себестоимости.</p>
+            </div>
+
             {/* УВЕДОМЛЕНИЯ О ДОСТАВКЕ */}
             {(() => {
               const today = new Date().toDateString();
               const todayNotifications = deliveryNotifications.filter(item => new Date(item.deliveredAt).toDateString() === today);
               const visibleNotifications = notificationsExpanded ? todayNotifications : deliveryNotifications.slice(0, 2);
               return (
-                <div className={\`rounded-2xl border shadow-sm overflow-hidden \${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}\`}>
+                <div className={`rounded-2xl border shadow-sm overflow-hidden ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
                   <div className="flex items-center justify-between px-3.5 py-3 border-b border-gray-200/15">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center"><Bell size={16} /></div>
                       <div><h3 className="text-xs font-bold">Уведомления о доставке</h3><p className="text-[10px] text-gray-400">Последние доставки курьеров</p></div>
                     </div>
-                    <span className={\`text-[10px] font-semibold px-2 py-1 rounded-full \${isDarkMode ? 'bg-[#3D4754] text-gray-200' : 'bg-rose-50 text-[#58111A]'}\`}>{todayNotifications.length} сегодня</span>
+                    <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${isDarkMode ? 'bg-[#3D4754] text-gray-200' : 'bg-rose-50 text-[#58111A]'}`}>{todayNotifications.length} сегодня</span>
                   </div>
                   <div className="divide-y divide-gray-200/10">
                     {notificationsLoading ? (
@@ -1731,7 +1780,7 @@ const handleSavePurchaseBatch = async (e) => {
                             <span className="text-[10px] text-gray-400 whitespace-nowrap">{new Date(notification.deliveredAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                           </div>
                           <p className="text-[10px] text-gray-400 mt-0.5">Курьер: {notification.courierName}</p>
-                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{(notification.items || []).map(item => \`\${item.title} × \${item.quantity}\`).join(', ')}</p>
+                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{(notification.items || []).map(item => `${item.title} × ${item.quantity}`).join(', ')}</p>
                         </div>
                       </div>
                     ))}
@@ -1739,7 +1788,7 @@ const handleSavePurchaseBatch = async (e) => {
                   <div className="px-3.5 py-2 flex items-center justify-between border-t border-gray-200/15">
                     <span className="text-[10px] text-gray-400">Новые доставки появляются сразу</span>
                     <button type="button" onClick={() => setNotificationsExpanded(value => !value)} className="text-[10px] font-bold text-[#B45B68] flex items-center gap-1">
-                      {notificationsExpanded ? 'Свернуть' : \`Все за сегодня (\${todayNotifications.length})\`}
+                      {notificationsExpanded ? 'Свернуть' : `Все за сегодня (${todayNotifications.length})`}
                       <span className={notificationsExpanded ? 'rotate-180' : ''}>⌄</span>
                     </button>
                   </div>
