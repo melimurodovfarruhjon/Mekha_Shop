@@ -186,6 +186,8 @@ const handleTouchCancel = () => {
   const [loading, setLoading] = useState(false);
   const [deliveryNotifications, setDeliveryNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [notificationsExpanded, setNotificationsExpanded] = useState(false);
+  const [rateHistory, setRateHistory] = useState([]);
 
   // Тема
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -685,6 +687,7 @@ useEffect(() => {
           sourceUpdatedAt: data.time_last_update_utc || null,
           checkedAt: new Date().toISOString()
         }));
+        setRateHistory(previous => [...previous, { at: Date.now(), value: usdTjs }].slice(-48));
       }
     } catch (err) {
       console.error('Ошибка курса:', err);
@@ -695,7 +698,7 @@ useEffect(() => {
 
   const fetchDeliveryNotifications = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/delivery-notifications?limit=15`);
+      const response = await fetch(`${BACKEND_URL}/api/delivery-notifications?limit=50`);
       if (!response.ok) throw new Error('Не удалось загрузить уведомления');
       const data = await response.json();
       if (data.success && Array.isArray(data.notifications)) setDeliveryNotifications(data.notifications);
@@ -718,14 +721,23 @@ useEffect(() => {
 
   useEffect(() => {
     fetchRates();
-    const rateInterval = window.setInterval(fetchRates, 5 * 60 * 1000);
+    const rateInterval = window.setInterval(fetchRates, 3000);
     return () => window.clearInterval(rateInterval);
   }, []);
 
   useEffect(() => {
     fetchDeliveryNotifications();
-    const notificationInterval = window.setInterval(fetchDeliveryNotifications, 15 * 1000);
-    return () => window.clearInterval(notificationInterval);
+    const stream = new EventSource(\`\${BACKEND_URL}/api/delivery-notifications/stream\`);
+    stream.onmessage = (event) => {
+      try {
+        const notification = JSON.parse(event.data);
+        setDeliveryNotifications(previous => [notification, ...previous.filter(item => String(item.id) !== String(notification.id))].slice(0, 50));
+        setNotificationsLoading(false);
+      } catch (error) {
+        console.error('Invalid delivery notification event:', error);
+      }
+    };
+    return () => stream.close();
   }, []);
 
   const handleNumericInput = (setter) => (e) => {
@@ -736,6 +748,16 @@ useEffect(() => {
   const unitCNY = parseFloat(calcUnitPriceCNY) || 0;
   const qty = parseInt(calcQuantity) || 1;
   const cargoVal = parseFloat(calcCargoCost) || 0;
+  const chartValues = rateHistory.length ? rateHistory.map(point => point.value) : [rates.USD_TJS];
+  const chartMin = Math.min(...chartValues);
+  const chartMax = Math.max(...chartValues);
+  const chartRange = chartMax - chartMin || Math.max(chartMax * 0.0001, 0.000001);
+  const rateChartPoints = chartValues.map((value, index) => {
+    const x = chartValues.length === 1 ? 50 : (index / (chartValues.length - 1)) * 100;
+    const y = 36 - ((value - chartMin) / chartRange) * 28;
+    return \`\${x},\${y}\`;
+  }).join(' ');
+  const rateChartArea = \`0,40 \${rateChartPoints} 100,40\`;
 
   const totalWholesaleCNY = unitCNY * qty;
   const totalWholesaleUSD = totalWholesaleCNY * rates.CNY_USD;
@@ -1619,49 +1641,34 @@ const handleSavePurchaseBatch = async (e) => {
               </div>
             </div>
 
-            {/* УВЕДОМЛЕНИЯ О ДОСТАВКЕ */}
-            <div className={`rounded-2xl border shadow-sm overflow-hidden ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
-              <div className="flex items-center justify-between px-3.5 py-3 border-b border-gray-200/15">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center"><Bell size={16} /></div>
-                  <div><h3 className="text-xs font-bold">Уведомления о доставке</h3><p className="text-[10px] text-gray-400">Подтверждения курьеров из Telegram</p></div>
-                </div>
-                <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${isDarkMode ? 'bg-[#3D4754] text-gray-200' : 'bg-rose-50 text-[#58111A]'}`}>{deliveryNotifications.length}</span>
-              </div>
-              <div className="divide-y divide-gray-200/10">
-                {notificationsLoading ? (
-                  <div className="px-3.5 py-4 text-xs text-gray-400">Загружаем уведомления…</div>
-                ) : deliveryNotifications.length === 0 ? (
-                  <div className="px-3.5 py-5 text-center">
-                    <PackageCheck size={22} className="mx-auto mb-1.5 text-gray-400" />
-                    <p className="text-xs font-semibold text-gray-400">Доставленных заказов пока нет</p>
-                    <p className="text-[10px] text-gray-500 mt-1">Когда курьер подтвердит доставку в Telegram, событие появится здесь</p>
-                  </div>
-                ) : deliveryNotifications.map(notification => (
-                  <div key={notification.id} className="px-3.5 py-3 flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0"><PackageCheck size={17} /></div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold truncate">Заказ №{notification.publicNumber || '—'} доставлен</p>
-                        <span className="text-[10px] text-gray-400 whitespace-nowrap">{new Date(notification.deliveredAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{new Date(notification.deliveredAt).toLocaleDateString('ru-RU')} · Курьер: {notification.courierName}</p>
-                      <div className="mt-1.5 space-y-0.5">{(notification.items || []).map((item, index) => <p key={index} className="text-[11px] text-gray-500 truncate">{item.title} × {item.quantity}</p>)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="px-3.5 py-2 flex items-center justify-between border-t border-gray-200/15">
-                <span className="text-[10px] text-gray-400">Автообновление каждые 15 сек.</span>
-                <button type="button" onClick={fetchDeliveryNotifications} className="text-[10px] font-bold text-[#B45B68] flex items-center gap-1"><RefreshCw size={11} /> Обновить</button>
-              </div>
-            </div>
-
             {/* НОВОСТИ ВАЛЮТ */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider flex items-center gap-1.5">
                 <RefreshCw size={14} /> Мониторинг курсов валют
               </h3>
+              <div className={\`rounded-2xl border p-3 shadow-sm \${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}\`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400">USD / TJS</p>
+                    <p className="text-xl font-extrabold tracking-tight">{rates.USD_TJS.toFixed(6)} <span className="text-xs font-semibold text-gray-400">TJS</span></p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Курс доллара к сомони</p>
+                  </div>
+                  <span className={\`text-[9px] px-2 py-1 rounded-full \${loading ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}\`}>{loading ? 'Обновление…' : 'Проверка 3 сек.'}</span>
+                </div>
+                <div className="mt-2 h-24 overflow-hidden rounded-xl">
+                  <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="w-full h-full">
+                    <defs><linearGradient id="mekhaRateFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#B45B68" stopOpacity="0.42" /><stop offset="100%" stopColor="#B45B68" stopOpacity="0.02" /></linearGradient></defs>
+                    <polygon points={rateChartArea} fill="url(#mekhaRateFill)" />
+                    <polyline points={rateChartPoints} fill="none" stroke="#B45B68" strokeWidth="0.9" vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div className="flex items-center justify-between text-[9px] text-gray-400 mt-1">
+                  <span>{rateHistory.length ? new Date(rateHistory[0].at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                  <span>График-горы, без свечей</span>
+                  <span>Сейчас</span>
+                </div>
+                <p className="text-[9px] text-gray-500 mt-2">Проверяем источник каждые 3 секунды. Линия меняется только при поступлении нового значения курса — без искусственных колебаний.</p>
+              </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className={`p-3.5 rounded-2xl border shadow-sm space-y-1.5 ${
@@ -1695,6 +1702,50 @@ const handleSavePurchaseBatch = async (e) => {
                 <span>Последняя проверка: {rates.checkedAt ? new Date(rates.checkedAt).toLocaleTimeString('ru-RU') : '—'}. Частота изменения зависит от поставщика данных.</span>
               </div>
             </div>
+
+            {/* УВЕДОМЛЕНИЯ О ДОСТАВКЕ */}
+            {(() => {
+              const today = new Date().toDateString();
+              const todayNotifications = deliveryNotifications.filter(item => new Date(item.deliveredAt).toDateString() === today);
+              const visibleNotifications = notificationsExpanded ? todayNotifications : deliveryNotifications.slice(0, 2);
+              return (
+                <div className={\`rounded-2xl border shadow-sm overflow-hidden \${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}\`}>
+                  <div className="flex items-center justify-between px-3.5 py-3 border-b border-gray-200/15">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center"><Bell size={16} /></div>
+                      <div><h3 className="text-xs font-bold">Уведомления о доставке</h3><p className="text-[10px] text-gray-400">Последние доставки курьеров</p></div>
+                    </div>
+                    <span className={\`text-[10px] font-semibold px-2 py-1 rounded-full \${isDarkMode ? 'bg-[#3D4754] text-gray-200' : 'bg-rose-50 text-[#58111A]'}\`}>{todayNotifications.length} сегодня</span>
+                  </div>
+                  <div className="divide-y divide-gray-200/10">
+                    {notificationsLoading ? (
+                      <div className="px-3.5 py-3 text-xs text-gray-400">Загружаем…</div>
+                    ) : visibleNotifications.length === 0 ? (
+                      <div className="px-3.5 py-4 text-center text-xs text-gray-400">Сегодня доставок пока нет</div>
+                    ) : visibleNotifications.map(notification => (
+                      <div key={notification.id} className="px-3.5 py-2.5 flex gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0"><PackageCheck size={15} /></div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-bold truncate">Заказ №{notification.publicNumber || '—'} доставлен</p>
+                            <span className="text-[10px] text-gray-400 whitespace-nowrap">{new Date(notification.deliveredAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Курьер: {notification.courierName}</p>
+                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{(notification.items || []).map(item => \`\${item.title} × \${item.quantity}\`).join(', ')}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-3.5 py-2 flex items-center justify-between border-t border-gray-200/15">
+                    <span className="text-[10px] text-gray-400">Новые доставки появляются сразу</span>
+                    <button type="button" onClick={() => setNotificationsExpanded(value => !value)} className="text-[10px] font-bold text-[#B45B68] flex items-center gap-1">
+                      {notificationsExpanded ? 'Свернуть' : \`Все за сегодня (\${todayNotifications.length})\`}
+                      <span className={notificationsExpanded ? 'rotate-180' : ''}>⌄</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Быстрые действия */}
             <div className="grid grid-cols-2 gap-2">
