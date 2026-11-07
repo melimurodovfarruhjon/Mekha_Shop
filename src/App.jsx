@@ -195,11 +195,13 @@ const handleTouchCancel = () => {
 
   // Сохраняем выбор темы между перезагрузками и повторными посещениями.
   useEffect(() => {
+    const theme = isDarkMode ? 'dark' : 'light';
     try {
-      localStorage.setItem('mekha_theme_mode', isDarkMode ? 'dark' : 'light');
+      localStorage.setItem('mekha_theme_mode', theme);
     } catch (error) {
       console.warn('Не удалось сохранить тему:', error);
     }
+    document.documentElement.setAttribute('data-mekha-theme', theme);
   }, [isDarkMode]);
 
   // Поиск товаров
