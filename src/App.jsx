@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2, FileText } from 'lucide-react';
 
 // --- КОНФИГУРАЦИЯ БОТА И СЕРВЕРА ---
 const BACKEND_URL = "https://mekhaserver-production.up.railway.app"; // Ваша ссылка с Render
@@ -211,6 +211,10 @@ const handleTouchCancel = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [purchaseReports, setPurchaseReports] = useState([]);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [selectedReportBatchId, setSelectedReportBatchId] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const [evaporatingProductId, setEvaporatingProductId] = useState(null);
   const [deleteConfirmationStep, setDeleteConfirmationStep] = useState(1);
@@ -337,6 +341,32 @@ const handleTouchCancel = () => {
 
     } finally {
       setProductsLoading(false);
+    }
+  };
+
+  const openPurchaseReports = async () => {
+    setIsReportModalOpen(true);
+    setSelectedReportBatchId(null);
+    setReportLoading(true);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/purchase-batches`);
+      const data = await response.json();
+
+      if (!response.ok || !data.success || !Array.isArray(data.batches)) {
+        throw new Error(data.error || 'Не удалось загрузить поставки');
+      }
+
+      setPurchaseReports(data.batches);
+    } catch (error) {
+      console.error('Purchase reports load failed:', error);
+      setModalAlert({
+        title: 'Ошибка загрузки отчётов',
+        message: error.message || 'Попробуйте обновить список поставок.',
+        type: 'error'
+      });
+    } finally {
+      setReportLoading(false);
     }
   };
 
@@ -2212,6 +2242,266 @@ const handleSavePurchaseBatch = async (e) => {
         
        </div>
       </main>
+
+      {/* КНОПКА ОТЧЁТОВ В РАЗДЕЛЕ ТОВАРОВ */}
+      {activeTab === 'products' && !isReportModalOpen && (
+        <button
+          type="button"
+          onClick={openPurchaseReports}
+          aria-label="Открыть отчёты по поставкам"
+          title="Отчёты по поставкам"
+          style={{ right: 'max(1rem, calc((100vw - 448px) / 2 + 1rem))' }}
+          className={`fixed bottom-24 z-30 w-14 h-14 rounded-full bg-[#58111A] text-white shadow-xl flex items-center justify-center border-4 active:scale-95 transition-transform ${
+            isDarkMode ? 'border-[#2B323D]' : 'border-[#FAF8F5]'
+          }`}
+        >
+          <FileText size={23} />
+        </button>
+      )}
+
+      {/* ОТЧЁТЫ ПО ЗАКУПОЧНЫМ ПОСТАВКАМ */}
+      {isReportModalOpen && (() => {
+        const selectedBatch = purchaseReports.find(
+          batch => String(batch.id) === String(selectedReportBatchId)
+        );
+        const items = selectedBatch?.items || [];
+        const totalDelivered = items.reduce((sum, item) => sum + Number(item.deliveredQuantity || 0), 0);
+        const totalSold = items.reduce((sum, item) => sum + Number(item.soldQuantity || 0), 0);
+        const totalRemaining = items.reduce((sum, item) => sum + Number(item.remainingQuantity || 0), 0);
+        const hasMissingPrices = items.some(item => Number(item.soldQuantity) > 0 && Number(item.salePriceTjs) <= 0);
+        const totalRevenue = items.reduce((sum, item) => {
+          const sold = Number(item.soldQuantity) || 0;
+          const price = Number(item.salePriceTjs) || 0;
+          return sum + (price > 0 ? sold * price : 0);
+        }, 0);
+        const totalProfit = items.reduce((sum, item) => {
+          const sold = Number(item.soldQuantity) || 0;
+          const price = Number(item.salePriceTjs) || 0;
+          const cost = Number(item.unitCostTjs) || 0;
+          return sum + (price > 0 ? sold * (price - cost) : 0);
+        }, 0);
+        const formatReportMoney = value =>
+          `${Number(value || 0).toLocaleString('ru-RU', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })} сом.`;
+        const batchTitle = batch => {
+          const firstLine = String(batch.notes || '').split('\\n')[0].trim();
+          return firstLine || `Поставка №${batch.batchNumber}`;
+        };
+
+        return (
+          <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className={`w-full max-w-2xl max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col ${
+              isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
+            }`}>
+              <div className="px-4 py-4 border-b border-gray-200/20 flex items-center gap-3">
+                {selectedBatch && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedReportBatchId(null)}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                      isDarkMode ? 'bg-[#3D4754]' : 'bg-gray-100'
+                    }`}
+                    aria-label="Назад к списку поставок"
+                  >
+                    <span className="text-xl leading-none">‹</span>
+                  </button>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-bold truncate">
+                    {selectedBatch ? 'Отчёт по поставке' : 'Отчёты по поставкам'}
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {selectedBatch
+                      ? `Поставка №${selectedBatch.batchNumber}`
+                      : 'Выберите поставку для просмотра результатов'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReportModalOpen(false);
+                    setSelectedReportBatchId(null);
+                  }}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400"
+                  aria-label="Закрыть отчёты"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+                {reportLoading ? (
+                  <div className="py-12 flex flex-col items-center gap-3 text-sm text-gray-400">
+                    <RefreshCw size={22} className="animate-spin" />
+                    Загружаем поставки...
+                  </div>
+                ) : selectedBatch ? (
+                  <>
+                    <div className={`rounded-2xl p-3 space-y-1 ${
+                      isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50'
+                    }`}>
+                      <p className="font-bold text-sm">{batchTitle(selectedBatch)}</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(selectedBatch.purchasedAt).toLocaleString('ru-RU', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
+                        <p className="text-[10px] text-gray-400">Привезено</p>
+                        <p className="text-lg font-bold">{totalDelivered}</p>
+                      </div>
+                      <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
+                        <p className="text-[10px] text-gray-400">Продано</p>
+                        <p className="text-lg font-bold">{totalSold}</p>
+                      </div>
+                      <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
+                        <p className="text-[10px] text-gray-400">Осталось</p>
+                        <p className="text-lg font-bold">{totalRemaining}</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-200/20 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[760px] text-xs">
+                          <thead className={isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}>
+                            <tr className="text-left text-gray-400">
+                              <th className="px-3 py-3 font-semibold">Имя товара</th>
+                              <th className="px-3 py-3 text-right font-semibold">Привезено, шт.</th>
+                              <th className="px-3 py-3 text-right font-semibold">Продано, шт.</th>
+                              <th className="px-3 py-3 text-right font-semibold">Осталось, шт.</th>
+                              <th className="px-3 py-3 text-right font-semibold">Выручка</th>
+                              <th className="px-3 py-3 text-right font-semibold">Чистая прибыль</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {items.map(item => {
+                              const sold = Number(item.soldQuantity) || 0;
+                              const price = Number(item.salePriceTjs) || 0;
+                              const cost = Number(item.unitCostTjs) || 0;
+                              const hasPrice = price > 0;
+                              const revenue = hasPrice ? sold * price : 0;
+                              const profit = hasPrice ? sold * (price - cost) : 0;
+
+                              return (
+                                <tr key={item.id} className="border-t border-gray-200/10">
+                                  <td className="px-3 py-3 font-semibold max-w-[180px]">
+                                    <div className="flex items-center gap-2">
+                                      {item.photo ? (
+                                        <img src={item.photo} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                                      ) : (
+                                        <div className={`w-8 h-8 rounded-lg shrink-0 ${isDarkMode ? 'bg-[#485361]' : 'bg-gray-100'}`} />
+                                      )}
+                                      <span className="truncate">{item.title}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-3 text-right tabular-nums">{item.deliveredQuantity}</td>
+                                  <td className="px-3 py-3 text-right tabular-nums">{sold}</td>
+                                  <td className="px-3 py-3 text-right tabular-nums">{item.remainingQuantity}</td>
+                                  <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
+                                    {sold === 0 ? '0.00' : hasPrice ? formatReportMoney(revenue) : 'Цена не указана'}
+                                  </td>
+                                  <td className={`px-3 py-3 text-right whitespace-nowrap tabular-nums font-semibold ${
+                                    profit >= 0 ? 'text-emerald-500' : 'text-red-500'
+                                  }`}>
+                                    {sold === 0 ? '0.00' : hasPrice ? formatReportMoney(profit) : '—'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {items.length === 0 && (
+                      <p className="text-center text-sm text-gray-400 py-6">В этой поставке нет товарных позиций.</p>
+                    )}
+
+                    <div className={`rounded-2xl p-4 space-y-3 ${
+                      isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50'
+                    }`}>
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span className="text-gray-400">Общая выручка</span>
+                        <span className="font-bold text-right">{formatReportMoney(totalRevenue)}</span>
+                      </div>
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span className="text-gray-400">Общая чистая прибыль</span>
+                        <span className={`font-bold text-right ${totalProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                          {formatReportMoney(totalProfit)}
+                        </span>
+                      </div>
+                      {hasMissingPrices && (
+                        <p className="text-[11px] text-amber-500">
+                          Внимание: у части проданных товаров не указана цена продажи. Итоги не включают эти позиции.
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : purchaseReports.length === 0 ? (
+                  <div className="py-12 text-center space-y-2">
+                    <FileText size={30} className="mx-auto text-gray-400" />
+                    <p className="font-semibold text-sm">Поставок пока нет</p>
+                    <p className="text-xs text-gray-400">Сохранённые закупочные партии появятся здесь.</p>
+                  </div>
+                ) : (
+                  purchaseReports.map(batch => {
+                    const quantity = batch.items.reduce(
+                      (sum, item) => sum + Number(item.deliveredQuantity || 0),
+                      0
+                    );
+                    return (
+                      <button
+                        key={batch.id}
+                        type="button"
+                        onClick={() => setSelectedReportBatchId(batch.id)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left transition-colors ${
+                          isDarkMode
+                            ? 'bg-[#343D49] border-gray-700 hover:border-rose-400'
+                            : 'bg-white border-gray-200 hover:border-[#8B2635]'
+                        }`}
+                      >
+                        <div className="w-11 h-11 rounded-xl bg-[#58111A] text-white flex items-center justify-center shrink-0">
+                          <FileText size={19} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold truncate">{batchTitle(batch)}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            №{batch.batchNumber} · {new Date(batch.purchasedAt).toLocaleDateString('ru-RU')} · {batch.items.length} товаров · {quantity} шт.
+                          </p>
+                        </div>
+                        <span className="text-gray-400 text-xl">›</span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {!selectedBatch && !reportLoading && (
+                <div className="p-3 border-t border-gray-200/20">
+                  <button
+                    type="button"
+                    onClick={openPurchaseReports}
+                    className={`w-full py-2.5 rounded-xl text-xs font-semibold ${
+                      isDarkMode ? 'bg-[#343D49]' : 'bg-gray-100'
+                    }`}
+                  >
+                    Обновить список
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ ТОВАРА */}
         {productToDelete && (
