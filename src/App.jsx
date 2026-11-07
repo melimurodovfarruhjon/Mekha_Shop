@@ -355,40 +355,6 @@ useEffect(() => {
         deliveriesRef.current = nextDeliveries;
         setDeliveries(nextDeliveries);
 
-        // Списываем склад только при подтверждённой доставке.
-        if (event.type === 'DELIVERED' && order.items?.length) {
-          setProducts(prevProducts => {
-            const nextProducts = prevProducts.map(product => {
-              const orderedQty = order.items
-                .filter(item =>
-                  item.productId != null &&
-                  String(item.productId) === String(product.id)
-                )
-                .reduce(
-                  (sum, item) => sum + (Number(item.qty) || 0),
-                  0
-                );
-
-              if (orderedQty <= 0) return product;
-
-              return {
-                ...product,
-                quantity: Math.max(
-                  0,
-                  Number(product.quantity || 0) - orderedQty
-                )
-              };
-            });
-
-            localStorage.setItem(
-              'mekha_products',
-              JSON.stringify(nextProducts)
-            );
-
-            return nextProducts;
-          });
-        }
-
         setModalAlert(
           event.type === 'DELIVERED'
             ? {
