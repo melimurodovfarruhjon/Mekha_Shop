@@ -1695,7 +1695,7 @@ const handleSavePurchaseBatch = async (e) => {
                 <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">
                   Каталог моделей
                 </h2>
-                <span className="text-[10px] bg-rose-100 text-[#58111A] px-2 py-0.5 rounded-full font-medium">
+                <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border shadow-sm ${isDarkMode ? 'bg-[#58111A] text-white border-rose-300/50 ring-1 ring-rose-200/20' : 'bg-rose-100 text-[#58111A] border-rose-200'}`}>
                   Всего: {filteredProducts.length} моделей
                 </span>
               </div>
@@ -1974,7 +1974,7 @@ const handleSavePurchaseBatch = async (e) => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Отправка заказов в Telegram</h2>
-              <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border shadow-sm ${isDarkMode ? 'bg-[#58111A] text-white border-rose-300/50 ring-1 ring-rose-200/20' : 'bg-rose-100 text-[#58111A] border-rose-200'}`}>Всего: {deliveries.length}</span>
+              <span className="text-[10px] bg-rose-100 text-[#58111A] px-2 py-0.5 rounded-full font-medium">Всего: {deliveries.length}</span>
             </div>
 
             {/* Форма отправки */}
