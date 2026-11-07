@@ -286,9 +286,35 @@ const handleTouchCancel = () => {
   // СПИСОК КУРЬЕРОВ
   const [couriers, setCouriers] = useState(() => {
     const saved = localStorage.getItem('mekha_couriers');
-    return saved ? JSON.parse(saved) : [
-      { id: 1, name: 'Нодир', chatId: '907176273' }
+    const existingCouriers = saved ? JSON.parse(saved) : [
+      { id: 1, name: 'Фаррух', chatId: '907176273' }
     ];
+
+    // Обновляем сохранённый список: переименовываем текущий чат и добавляем курьера.
+    const updatedCouriers = existingCouriers.map(courier =>
+      String(courier.chatId) === '907176273'
+        ? { ...courier, name: 'Фаррух' }
+        : courier
+    );
+
+    const nodirExists = updatedCouriers.some(
+      courier => String(courier.chatId) === '8268527875'
+    );
+
+    if (!nodirExists) {
+      const nextId = updatedCouriers.reduce(
+        (maxId, courier) => Math.max(maxId, Number(courier.id) || 0),
+        0
+      ) + 1;
+
+      updatedCouriers.push({
+        id: nextId,
+        name: 'Нодир',
+        chatId: '8268527875'
+      });
+    }
+
+    return updatedCouriers;
   });
 
   useEffect(() => {
