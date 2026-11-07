@@ -1529,7 +1529,7 @@ const handleSavePurchaseBatch = async (e) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setIsSupportOpen(true)}
@@ -2284,12 +2284,71 @@ const handleSavePurchaseBatch = async (e) => {
           })} сом.`;
         const batchTitle = batch => {
           const firstLine = String(batch.notes || '').split(/\r?\n/)[0].trim();
-          return firstLine || `Поставка №${batch.batchNumber}`;
+          return firstLine || \`Поставка №\${batch.batchNumber}\`;
+        };
+        const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[char]));
+        const exportPurchaseReportPdf = () => {
+          if (!selectedBatch) return;
+          const printWindow = window.open('', '_blank');
+          if (!printWindow) {
+            setModalAlert({ title: 'Разрешите всплывающее окно', message: 'Браузер заблокировал создание PDF. Разрешите всплывающие окна для Mekha Shop и повторите попытку.', type: 'error' });
+            return;
+          }
+          const dateLabel = new Date(selectedBatch.purchasedAt).toLocaleString('ru-RU');
+          const rows = items.map(item => '<tr><td>' + escapeHtml(item.title) + '</td><td>' +
+            (Number(item.deliveredQuantity) || 0) + '</td><td>' + (Number(item.soldQuantity) || 0) +
+            '</td><td>' + (Number(item.remainingQuantity) || 0) + '</td><td>' +
+            (Number(item.revenueTjs) || 0).toFixed(2) + (item.hasMissingSalePrice ? ' *' : '') +
+            '</td><td>' + (Number(item.profitTjs) || 0).toFixed(2) +
+            (item.hasMissingSalePrice ? ' *' : '') + '</td></tr>').join('');
+          printWindow.document.write('<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Отчёт Mekha Shop</title><style>' +
+            '@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#17202a}' +
+            'h1{font-size:20px;margin:0 0 6px}.meta{color:#64748b;font-size:11px;margin-bottom:18px}' +
+            '.summary{display:flex;gap:24px;margin-bottom:16px;font-size:12px}.summary strong{display:block;font-size:16px;margin-top:4px}' +
+            'table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}th,td{border:1px solid #cbd5e1;padding:7px 6px;overflow-wrap:anywhere}' +
+            'th{background:#f1f5f9;text-align:left}td:not(:first-child),th:not(:first-child){text-align:right}tfoot{font-weight:bold;background:#f1f5f9}.note{margin-top:12px;color:#92400e;font-size:10px}' +
+            '</style></head><body><h1>' + escapeHtml(batchTitle(selectedBatch)) + '</h1><div class="meta">Поставка №' +
+            escapeHtml(selectedBatch.batchNumber) + ' · ' + escapeHtml(dateLabel) + '</div><div class="summary">' +
+            '<div>Привезено<strong>' + totalDelivered + '</strong></div><div>Продано<strong>' + totalSold +
+            '</strong></div><div>Осталось<strong>' + totalRemaining + '</strong></div></div><table><thead><tr>' +
+            '<th style="width:28%">Товар</th><th>Прив.</th><th>Прод.</th><th>Ост.</th><th>Выручка, TJS</th><th>Прибыль, TJS</th>' +
+            '</tr></thead><tbody>' + rows + '</tbody><tfoot><tr><td>Итого</td><td>' + totalDelivered +
+            '</td><td>' + totalSold + '</td><td>' + totalRemaining + '</td><td>' + totalRevenue.toFixed(2) +
+            '</td><td>' + totalProfit.toFixed(2) + '</td></tr></tfoot></table>' +
+            (hasMissingPrices ? '<p class="note">* Часть финансовых данных неполная: цена продажи не была зафиксирована.</p>' : '') +
+            '</body></html>');
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => printWindow.print(), 350);
+        };
+        const sharePurchaseReport = async () => {
+          const shareText = [
+            'Отчёт: ' + batchTitle(selectedBatch),
+            'Поставка №' + selectedBatch.batchNumber,
+            'Привезено: ' + totalDelivered + ' · Продано: ' + totalSold + ' · Осталось: ' + totalRemaining,
+            'Выручка: ' + formatReportMoney(totalRevenue),
+            'Чистая прибыль: ' + formatReportMoney(totalProfit),
+            hasMissingPrices ? 'Внимание: часть финансовых данных неполная.' : ''
+          ].filter(Boolean).join('\n');
+          try {
+            if (navigator.share) {
+              await navigator.share({ title: 'Отчёт Mekha Shop', text: shareText });
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(shareText);
+              setModalAlert({ title: 'Скопировано', message: 'Сводка отчёта скопирована. Её можно отправить контакту.', type: 'success' });
+            } else {
+              setModalAlert({ title: 'Поделиться недоступно', message: 'Браузер не поддерживает системное меню отправки.', type: 'error' });
+            }
+          } catch (error) {
+            if (error.name !== 'AbortError') setModalAlert({ title: 'Ошибка отправки', message: 'Не удалось открыть меню отправки.', type: 'error' });
+          }
         };
 
         return (
           <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div className={`w-full max-w-2xl max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col ${
+            <div className={`w-full max-w-xl max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col ${
               isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
             }`}>
               <div className="px-4 py-4 border-b border-gray-200/20 flex items-center gap-3">
@@ -2315,16 +2374,18 @@ const handleSavePurchaseBatch = async (e) => {
                       : 'Выберите поставку для просмотра результатов'}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsReportModalOpen(false);
-                    setSelectedReportBatchId(null);
-                  }}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400"
-                  aria-label="Закрыть отчёты"
-                >
-                  <X size={20} />
+                {selectedBatch && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button type="button" onClick={exportPurchaseReportPdf} title="Сохранить как PDF" aria-label="Сохранить отчёт как PDF" className="h-9 px-2 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-gray-500/10">
+                      <FileText size={15} /> PDF
+                    </button>
+                    <button type="button" onClick={sharePurchaseReport} title="Поделиться сводкой" aria-label="Поделиться отчётом" className="h-9 px-2 rounded-lg bg-[#58111A] text-white text-[11px] font-bold">
+                      Поделиться
+                    </button>
+                  </div>
+                )}
+                <button type="button" onClick={() => { setIsReportModalOpen(false); setSelectedReportBatchId(null); }} className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 shrink-0" aria-label="Закрыть отчёты">
+                  <X size={19} />
                 </button>
               </div>
 
@@ -2367,16 +2428,16 @@ const handleSavePurchaseBatch = async (e) => {
                     </div>
 
                     <div className="rounded-xl border border-gray-200/20 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[760px] text-xs">
+                      <div className="w-full">
+                        <table className="w-full table-fixed text-[10px] sm:text-xs">
                           <thead className={isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}>
                             <tr className="text-left text-gray-400">
-                              <th className="px-3 py-3 font-semibold">Имя товара</th>
-                              <th className="px-3 py-3 text-right font-semibold">Привезено, шт.</th>
-                              <th className="px-3 py-3 text-right font-semibold">Продано, шт.</th>
-                              <th className="px-3 py-3 text-right font-semibold">Осталось, шт.</th>
-                              <th className="px-3 py-3 text-right font-semibold">Выручка</th>
-                              <th className="px-3 py-3 text-right font-semibold">Чистая прибыль</th>
+                              <th className="w-[27%] px-1.5 py-2 text-left font-semibold">Товар</th>
+                              <th className="w-[10%] px-1 py-2 text-right font-semibold">Прив.</th>
+                              <th className="w-[10%] px-1 py-2 text-right font-semibold">Прод.</th>
+                              <th className="w-[10%] px-1 py-2 text-right font-semibold">Ост.</th>
+                              <th className="w-[21%] px-1 py-2 text-right font-semibold">Выручка</th>
+                              <th className="w-[22%] px-1 py-2 text-right font-semibold">Прибыль</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2388,23 +2449,23 @@ const handleSavePurchaseBatch = async (e) => {
 
                               return (
                                 <tr key={item.id} className="border-t border-gray-200/10">
-                                  <td className="px-3 py-3 font-semibold max-w-[180px]">
+                                  <td className="px-1.5 py-2 font-semibold">
                                     <div className="flex items-center gap-2">
                                       {item.photo ? (
-                                        <img src={item.photo} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                                        <img src={item.photo} alt="" className="hidden sm:block w-7 h-7 rounded-md object-cover shrink-0" />
                                       ) : (
                                         <div className={`w-8 h-8 rounded-lg shrink-0 ${isDarkMode ? 'bg-[#485361]' : 'bg-gray-100'}`} />
                                       )}
                                       <span className="truncate">{item.title}</span>
                                     </div>
                                   </td>
-                                  <td className="px-3 py-3 text-right tabular-nums">{item.deliveredQuantity}</td>
+                                  <td className="px-1 py-2 text-right tabular-nums">{item.deliveredQuantity}</td>
                                   <td className="px-3 py-3 text-right tabular-nums">{sold}</td>
                                   <td className="px-3 py-3 text-right tabular-nums">{item.remainingQuantity}</td>
-                                  <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
+                                  <td className="px-1 py-2 text-right whitespace-nowrap tabular-nums">
                                     {sold === 0 ? '0.00' : hasMissingPrice && revenue === 0 ? 'Цена не указана' : `${formatReportMoney(revenue)}${hasMissingPrice ? ' *' : ''}`}
                                   </td>
-                                  <td className={`px-3 py-3 text-right whitespace-nowrap tabular-nums font-semibold ${
+                                  <td className={`px-1 py-2 text-right whitespace-nowrap tabular-nums font-semibold ${
                                     profit >= 0 ? 'text-emerald-500' : 'text-red-500'
                                   }`}>
                                     {sold === 0 ? '0.00' : hasMissingPrice && revenue === 0 ? '—' : `${formatReportMoney(profit)}${hasMissingPrice ? ' *' : ''}`}
@@ -2415,14 +2476,14 @@ const handleSavePurchaseBatch = async (e) => {
                           </tbody>
                           <tfoot className={isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50'}>
                             <tr className="border-t-2 border-gray-300/30 font-bold">
-                              <td className="px-3 py-3">Итого</td>
+                              <td className="px-1.5 py-2">Итого</td>
                               <td className="px-3 py-3 text-right tabular-nums">{totalDelivered}</td>
                               <td className="px-3 py-3 text-right tabular-nums">{totalSold}</td>
                               <td className="px-3 py-3 text-right tabular-nums">{totalRemaining}</td>
                               <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
                                 {formatReportMoney(totalRevenue)}{hasMissingPrices ? ' *' : ''}
                               </td>
-                              <td className={`px-3 py-3 text-right whitespace-nowrap tabular-nums ${totalProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              <td className={`px-1 py-2 text-right whitespace-nowrap tabular-nums ${totalProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                 {formatReportMoney(totalProfit)}{hasMissingPrices ? ' *' : ''}
                               </td>
                             </tr>
