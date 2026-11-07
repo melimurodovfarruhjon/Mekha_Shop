@@ -1722,17 +1722,17 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
             {/* ФИНАНСОВАЯ СВОДКА И СКЛАД */}
-            <div className={`\rounded-2xl border p-3 shadow-sm space-y-3 ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
+            <div className={`rounded-2xl border p-3 shadow-sm space-y-3 ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Сводка за сегодня</h3>
                 <span className="text-[9px] text-gray-400">Обновление 30 сек.</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className={`\rounded-xl p-2.5 ${isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50/70'}`}>
+                <div className={`rounded-xl p-2.5 ${isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50/70'}`}>
                   <p className="text-[10px] text-gray-400">Выручка</p>
                   <p className="text-base font-extrabold mt-0.5">{Number(dashboardSummary?.revenueTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
                 </div>
-                <div className={`\rounded-xl p-2.5 ${isDarkMode ? 'bg-[#343D49]' : 'bg-emerald-50/70'}`}>
+                <div className={`rounded-xl p-2.5 ${isDarkMode ? 'bg-[#343D49]' : 'bg-emerald-50/70'}`}>
                   <p className="text-[10px] text-gray-400">Чистая прибыль*</p>
                   <p className={`text-base font-extrabold mt-0.5 ${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
                 </div>
