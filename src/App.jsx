@@ -2377,11 +2377,11 @@ const handleSavePurchaseBatch = async (e) => {
             // Таблица
             const columns = [
               { label: 'ТОВАР', width: 345, align: 'left' },
-              { label: 'ПРИВ.', width: 95, align: 'right' },
-              { label: 'ПРОД.', width: 95, align: 'right' },
-              { label: 'ОСТ.', width: 85, align: 'right' },
-              { label: 'ВЫРУЧКА, TJS', width: 195, align: 'right' },
-              { label: 'ЧИСТАЯ ПРИБЫЛЬ, TJS', width: 220, align: 'right' }
+              { label: 'Привезено, шт.', width: 135, align: 'right' },
+              { label: 'Продано, шт.', width: 125, align: 'right' },
+              { label: 'Остаток, шт.', width: 115, align: 'right' },
+              { label: 'Выручка, сом.', width: 180, align: 'right' },
+              { label: 'Чистая прибыль, сом.', width: 180, align: 'right' }
             ];
             let columnX = margin;
             columns.forEach(column => {
@@ -2617,11 +2617,11 @@ const handleSavePurchaseBatch = async (e) => {
                           <thead className={isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}>
                             <tr className="text-left text-gray-400">
                               <th className="w-[27%] px-1.5 py-2 text-left font-semibold">Товар</th>
-                              <th className="w-[10%] px-1 py-2 text-right font-semibold">Прив.</th>
-                              <th className="w-[10%] px-1 py-2 text-right font-semibold">Прод.</th>
-                              <th className="w-[10%] px-1 py-2 text-right font-semibold">Ост.</th>
-                              <th className="w-[21%] px-1 py-2 text-right font-semibold">Выручка</th>
-                              <th className="w-[22%] px-1 py-2 text-right font-semibold">Прибыль</th>
+                              <th className="w-[13%] px-1 py-2 text-right font-semibold">Привезено, шт.</th>
+                              <th className="w-[12%] px-1 py-2 text-right font-semibold">Продано, шт.</th>
+                              <th className="w-[12%] px-1 py-2 text-right font-semibold">Остаток, шт.</th>
+                              <th className="w-[18%] px-1 py-2 text-right font-semibold">Выручка</th>
+                              <th className="w-[18%] px-1 py-2 text-right font-semibold">Чистая прибыль</th>
                             </tr>
                           </thead>
                           <tbody>
