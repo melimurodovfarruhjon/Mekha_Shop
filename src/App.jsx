@@ -185,7 +185,22 @@ const handleTouchCancel = () => {
   const [loading, setLoading] = useState(false);
 
   // Тема
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      return localStorage.getItem('mekha_theme_mode') === 'dark';
+    } catch {
+      return false;
+    }
+  });
+
+  // Сохраняем выбор темы между перезагрузками и повторными посещениями.
+  useEffect(() => {
+    try {
+      localStorage.setItem('mekha_theme_mode', isDarkMode ? 'dark' : 'light');
+    } catch (error) {
+      console.warn('Не удалось сохранить тему:', error);
+    }
+  }, [isDarkMode]);
 
   // Поиск товаров
   const [searchQuery, setSearchQuery] = useState('');
