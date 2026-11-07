@@ -578,6 +578,7 @@ useEffect(() => {
   const [batchNewProductTitle, setBatchNewProductTitle] = useState('');
   const [batchNewProductPhoto, setBatchNewProductPhoto] = useState('');
   const [showBatchProductCreation, setShowBatchProductCreation] = useState(false);
+  const batchProductCreationLock = useRef(false);
 
   // Автоматически сохраняем незавершённую поставку в браузере.
   useEffect(() => {
@@ -1084,9 +1085,12 @@ const handleSavePurchaseBatch = async (e) => {
 };
 
   const handleCreateBatchProduct = () => {
+  if (batchProductCreationLock.current) return;
+  batchProductCreationLock.current = true;
   const cleanTitle = batchNewProductTitle.trim();
 
   if (!cleanTitle) {
+    batchProductCreationLock.current = false;
     setModalAlert({
       title: 'Укажите название',
       message: 'Введите название новой модели товара.',
@@ -1111,15 +1115,23 @@ const handleSavePurchaseBatch = async (e) => {
   // Не требуем повторного нажатия в каталоге: это предотвращает
   // случайное снятие только что выбранной модели.
   setProducts(prev => [newProduct, ...prev]);
-  setBatchItems(prev => [
-    ...prev.filter(item => item.productId),
-    {
+  setBatchItems(prev => {
+    const uniqueItems = [];
+    const seenIds = new Set();
+    for (const item of prev) {
+      const id = String(item.productId || '').trim();
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
+      uniqueItems.push(item);
+    }
+    if (seenIds.has(String(newProduct.id))) return uniqueItems;
+    return [...uniqueItems, {
       ...createEmptyBatchItem(),
       productId: String(newProduct.id),
       productTitle: newProduct.title,
       productPhoto: newProduct.photo
-    }
-  ]);
+    }];
+  });
 
   setBatchNewProductTitle('');
   setBatchNewProductPhoto('');
@@ -2707,7 +2719,11 @@ const handleSavePurchaseBatch = async (e) => {
 
         <button
           type="button"
-          onClick={() => setShowBatchProductCreation(true)}
+          onClick={() => {
+            setBatchItems([]);
+            batchProductCreationLock.current = false;
+            setShowBatchProductCreation(true);
+          }}
           className={`w-full border border-dashed rounded-xl p-4 flex items-center justify-center gap-2 text-sm font-semibold ${
             isDarkMode
               ? 'border-gray-600 text-rose-300'
@@ -2813,7 +2829,10 @@ const handleSavePurchaseBatch = async (e) => {
 
         <button
           type="button"
-          onClick={() => setShowBatchProductCreation(false)}
+          onClick={() => {
+            batchProductCreationLock.current = false;
+            setShowBatchProductCreation(false);
+          }}
           className="w-full py-2 text-xs text-gray-400 font-semibold"
         >
           Назад к каталогу
@@ -2842,7 +2861,7 @@ const handleSavePurchaseBatch = async (e) => {
         onClick={() => {
           if (showBatchProductCreation) {
             handleCreateBatchProduct();
-            setBatchStep(3);
+            if (batchNewProductTitle.trim()) setBatchStep(3);
             return;
           }
           setBatchStep(3);
