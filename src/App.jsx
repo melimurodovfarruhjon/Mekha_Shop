@@ -857,7 +857,7 @@ const handleSavePurchaseBatch = async (e) => {
 
   for (const item of batchItems) {
     const product = products.find(
-      p => String(p.id) === String(item.productId)
+      p => String(p.id) === String(item.productId) || String(p.legacyId || '') === String(item.productId)
     );
 
     if (!product) {
@@ -2749,7 +2749,7 @@ const handleSavePurchaseBatch = async (e) => {
 
       {batchItems.map((item, itemIndex) => {
         const product = products.find(
-          p => String(p.id) === String(item.productId)
+          p => String(p.id) === String(item.productId) || String(p.legacyId || '') === String(item.productId)
         );
 
         const variants = item.variants || [];
@@ -3024,7 +3024,7 @@ const handleSavePurchaseBatch = async (e) => {
 
       {batchItems.map((item, itemIndex) => {
         const product = products.find(
-          p => String(p.id) === String(item.productId)
+          p => String(p.id) === String(item.productId) || String(p.legacyId || '') === String(item.productId)
         );
 
         const validAmounts =
@@ -3356,7 +3356,7 @@ const handleSavePurchaseBatch = async (e) => {
 
         {batchItems.map((item, itemIndex) => {
           const product = products.find(
-            p => String(p.id) === String(item.productId)
+            p => String(p.id) === String(item.productId) || String(p.legacyId || '') === String(item.productId)
           );
 
           const quantity = Number(item.quantity) || 0;
