@@ -2289,60 +2289,200 @@ const handleSavePurchaseBatch = async (e) => {
         const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
           '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         }[char]));
-        const exportPurchaseReportPdf = () => {
-          if (!selectedBatch) return;
-          const printWindow = window.open('', '_blank');
-          if (!printWindow) {
-            setModalAlert({ title: 'Разрешите всплывающее окно', message: 'Браузер заблокировал создание PDF. Разрешите всплывающие окна для Mekha Shop и повторите попытку.', type: 'error' });
-            return;
+        const buildPurchaseReportPdf = async () => {
+          const pageWidth = 1123;
+          const pageHeight = 794;
+          const margin = 54;
+          const rowHeight = 54;
+          const rowsPerPage = Math.max(1, Math.floor((pageHeight - 300) / rowHeight));
+          const pages = [];
+          const reportItems = items.length ? items : [];
+          const pageCount = Math.max(1, Math.ceil(reportItems.length / rowsPerPage));
+
+          for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+            const canvas = document.createElement('canvas');
+            canvas.width = pageWidth;
+            canvas.height = pageHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Не удалось подготовить PDF');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, pageWidth, pageHeight);
+            ctx.fillStyle = '#17202a';
+            ctx.font = 'bold 30px Arial, sans-serif';
+            ctx.fillText(batchTitle(selectedBatch), margin, 58, pageWidth - margin * 2);
+            ctx.fillStyle = '#64748b';
+            ctx.font = '18px Arial, sans-serif';
+            ctx.fillText('Поставка №' + selectedBatch.batchNumber + ' · ' + new Date(selectedBatch.purchasedAt).toLocaleString('ru-RU'), margin, 92);
+            const summary = [
+              ['Привезено', totalDelivered],
+              ['Продано', totalSold],
+              ['Осталось', totalRemaining]
+            ];
+            summary.forEach((entry, index) => {
+              const x = margin + index * 245;
+              ctx.fillStyle = '#f1f5f9';
+              ctx.fillRect(x, 120, 220, 76);
+              ctx.fillStyle = '#64748b';
+              ctx.font = '16px Arial, sans-serif';
+              ctx.fillText(entry[0], x + 16, 148);
+              ctx.fillStyle = '#17202a';
+              ctx.font = 'bold 25px Arial, sans-serif';
+              ctx.fillText(String(entry[1]), x + 16, 181);
+            });
+
+            const columns = [
+              { label: 'Товар', x: margin, width: 350, align: 'left' },
+              { label: 'Прив.', x: 404, width: 110, align: 'right' },
+              { label: 'Прод.', x: 514, width: 110, align: 'right' },
+              { label: 'Ост.', x: 624, width: 100, align: 'right' },
+              { label: 'Выручка, TJS', x: 724, width: 170, align: 'right' },
+              { label: 'Прибыль, TJS', x: 894, width: 175, align: 'right' }
+            ];
+            let y = 232;
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(margin, y, pageWidth - margin * 2, 48);
+            ctx.fillStyle = '#334155';
+            ctx.font = 'bold 16px Arial, sans-serif';
+            columns.forEach(col => ctx.textAlign = col.align);
+            columns.forEach(col => ctx.fillText(col.label, col.align === 'right' ? col.x + col.width - 8 : col.x + 10, y + 30, col.width - 16));
+            y += 48;
+
+            const pageItems = reportItems.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage);
+            pageItems.forEach((item, rowIndex) => {
+              if (rowIndex % 2 === 0) {
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(margin, y, pageWidth - margin * 2, rowHeight);
+              }
+              ctx.fillStyle = '#17202a';
+              ctx.font = '16px Arial, sans-serif';
+              const title = String(item.title || 'Товар');
+              let displayTitle = title;
+              while (ctx.measureText(displayTitle).width > 325 && displayTitle.length > 4) displayTitle = displayTitle.slice(0, -2) + '…';
+              ctx.textAlign = 'left';
+              ctx.fillText(displayTitle, margin + 10, y + 32, 325);
+              const values = [
+                Number(item.deliveredQuantity) || 0,
+                Number(item.soldQuantity) || 0,
+                Number(item.remainingQuantity) || 0,
+                (Number(item.revenueTjs) || 0).toFixed(2) + (item.hasMissingSalePrice ? ' *' : ''),
+                (Number(item.profitTjs) || 0).toFixed(2) + (item.hasMissingSalePrice ? ' *' : '')
+              ];
+              columns.slice(1).forEach((col, index) => {
+                ctx.textAlign = 'right';
+                ctx.fillText(String(values[index]), col.x + col.width - 8, y + 32, col.width - 16);
+              });
+              ctx.strokeStyle = '#e2e8f0';
+              ctx.beginPath();
+              ctx.moveTo(margin, y + rowHeight);
+              ctx.lineTo(pageWidth - margin, y + rowHeight);
+              ctx.stroke();
+              y += rowHeight;
+            });
+
+            if (pageIndex === pageCount - 1) {
+              ctx.fillStyle = '#e2e8f0';
+              ctx.fillRect(margin, y, pageWidth - margin * 2, 52);
+              ctx.fillStyle = '#17202a';
+              ctx.font = 'bold 17px Arial, sans-serif';
+              ctx.textAlign = 'left';
+              ctx.fillText('Итого', margin + 10, y + 33);
+              const totals = [totalDelivered, totalSold, totalRemaining, totalRevenue.toFixed(2), totalProfit.toFixed(2)];
+              columns.slice(1).forEach((col, index) => {
+                ctx.textAlign = 'right';
+                ctx.fillText(String(totals[index]), col.x + col.width - 8, y + 33, col.width - 16);
+              });
+              y += 52;
+            }
+            if (hasMissingPrices) {
+              ctx.fillStyle = '#92400e';
+              ctx.font = '14px Arial, sans-serif';
+              ctx.textAlign = 'left';
+              ctx.fillText('* Для части продаж цена не была зафиксирована; финансовые данные неполные.', margin, Math.min(y + 28, pageHeight - 30), pageWidth - margin * 2);
+            }
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '13px Arial, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('Mekha Shop · ' + (pageIndex + 1) + '/' + pageCount, pageWidth - margin, pageHeight - 20);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+            const binary = atob(dataUrl.split(',')[1]);
+            const jpeg = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) jpeg[i] = binary.charCodeAt(i);
+            pages.push(jpeg);
           }
-          const dateLabel = new Date(selectedBatch.purchasedAt).toLocaleString('ru-RU');
-          const rows = items.map(item => '<tr><td>' + escapeHtml(item.title) + '</td><td>' +
-            (Number(item.deliveredQuantity) || 0) + '</td><td>' + (Number(item.soldQuantity) || 0) +
-            '</td><td>' + (Number(item.remainingQuantity) || 0) + '</td><td>' +
-            (Number(item.revenueTjs) || 0).toFixed(2) + (item.hasMissingSalePrice ? ' *' : '') +
-            '</td><td>' + (Number(item.profitTjs) || 0).toFixed(2) +
-            (item.hasMissingSalePrice ? ' *' : '') + '</td></tr>').join('');
-          printWindow.document.write('<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Отчёт Mekha Shop</title><style>' +
-            '@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#17202a}' +
-            'h1{font-size:20px;margin:0 0 6px}.meta{color:#64748b;font-size:11px;margin-bottom:18px}' +
-            '.summary{display:flex;gap:24px;margin-bottom:16px;font-size:12px}.summary strong{display:block;font-size:16px;margin-top:4px}' +
-            'table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}th,td{border:1px solid #cbd5e1;padding:7px 6px;overflow-wrap:anywhere}' +
-            'th{background:#f1f5f9;text-align:left}td:not(:first-child),th:not(:first-child){text-align:right}tfoot{font-weight:bold;background:#f1f5f9}.note{margin-top:12px;color:#92400e;font-size:10px}' +
-            '</style></head><body><h1>' + escapeHtml(batchTitle(selectedBatch)) + '</h1><div class="meta">Поставка №' +
-            escapeHtml(selectedBatch.batchNumber) + ' · ' + escapeHtml(dateLabel) + '</div><div class="summary">' +
-            '<div>Привезено<strong>' + totalDelivered + '</strong></div><div>Продано<strong>' + totalSold +
-            '</strong></div><div>Осталось<strong>' + totalRemaining + '</strong></div></div><table><thead><tr>' +
-            '<th style="width:28%">Товар</th><th>Прив.</th><th>Прод.</th><th>Ост.</th><th>Выручка, TJS</th><th>Прибыль, TJS</th>' +
-            '</tr></thead><tbody>' + rows + '</tbody><tfoot><tr><td>Итого</td><td>' + totalDelivered +
-            '</td><td>' + totalSold + '</td><td>' + totalRemaining + '</td><td>' + totalRevenue.toFixed(2) +
-            '</td><td>' + totalProfit.toFixed(2) + '</td></tr></tfoot></table>' +
-            (hasMissingPrices ? '<p class="note">* Часть финансовых данных неполная: цена продажи не была зафиксирована.</p>' : '') +
-            '</body></html>');
-          printWindow.document.close();
-          printWindow.focus();
-          setTimeout(() => printWindow.print(), 350);
+
+          const encoder = new TextEncoder();
+          const chunks = [];
+          const offsets = [0];
+          let byteLength = 0;
+          const push = chunk => {
+            chunks.push(chunk);
+            byteLength += chunk.length;
+          };
+          const pushText = text => push(encoder.encode(text));
+          const objectCount = 2 + pages.length * 3;
+          pushText('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+          const addObject = (id, parts) => {
+            offsets[id] = byteLength;
+            pushText(id + ' 0 obj\n');
+            parts.forEach(part => typeof part === 'string' ? pushText(part) : push(part));
+            pushText('\nendobj\n');
+          };
+          addObject(1, ['<< /Type /Catalog /Pages 2 0 R >>']);
+          const kids = pages.map((_, i) => (3 + i * 3) + ' 0 R').join(' ');
+          addObject(2, ['<< /Type /Pages /Kids [' + kids + '] /Count ' + pages.length + ' >>']);
+          pages.forEach((jpeg, i) => {
+            const pageId = 3 + i * 3;
+            const imageId = pageId + 1;
+            const contentId = pageId + 2;
+            addObject(pageId, ['<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /XObject << /Im0 ' + imageId + ' 0 R >> >> /Contents ' + contentId + ' 0 R >>']);
+            addObject(imageId, ['<< /Type /XObject /Subtype /Image /Width ' + pageWidth + ' /Height ' + pageHeight + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpeg.length + ' >>\nstream\n', jpeg, '\nendstream']);
+            const stream = 'q\n842 0 0 595 0 0 cm\n/Im0 Do\nQ';
+            addObject(contentId, ['<< /Length ' + encoder.encode(stream).length + ' >>\nstream\n' + stream + '\nendstream']);
+          });
+          const xrefOffset = byteLength;
+          pushText('xref\n0 ' + (objectCount + 1) + '\n0000000000 65535 f \n');
+          for (let id = 1; id <= objectCount; id++) pushText(String(offsets[id]).padStart(10, '0') + ' 00000 n \n');
+          pushText('trailer\n<< /Size ' + (objectCount + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF');
+          return new Blob(chunks, { type: 'application/pdf' });
+        };
+        const exportPurchaseReportPdf = async () => {
+          try {
+            const blob = await buildPurchaseReportPdf();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Mekha-Shop-report-' + selectedBatch.batchNumber + '.pdf';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 30000);
+          } catch (error) {
+            console.error('PDF export failed:', error);
+            setModalAlert({ title: 'Ошибка PDF', message: error.message || 'Не удалось создать PDF.', type: 'error' });
+          }
         };
         const sharePurchaseReport = async () => {
-          const shareText = [
-            'Отчёт: ' + batchTitle(selectedBatch),
-            'Поставка №' + selectedBatch.batchNumber,
-            'Привезено: ' + totalDelivered + ' · Продано: ' + totalSold + ' · Осталось: ' + totalRemaining,
-            'Выручка: ' + formatReportMoney(totalRevenue),
-            'Чистая прибыль: ' + formatReportMoney(totalProfit),
-            hasMissingPrices ? 'Внимание: часть финансовых данных неполная.' : ''
-          ].filter(Boolean).join('\n');
           try {
-            if (navigator.share) {
-              await navigator.share({ title: 'Отчёт Mekha Shop', text: shareText });
-            } else if (navigator.clipboard && navigator.clipboard.writeText) {
-              await navigator.clipboard.writeText(shareText);
-              setModalAlert({ title: 'Скопировано', message: 'Сводка отчёта скопирована. Её можно отправить контакту.', type: 'success' });
+            const blob = await buildPurchaseReportPdf();
+            const file = new File([blob], 'Mekha-Shop-report-' + selectedBatch.batchNumber + '.pdf', { type: 'application/pdf' });
+            if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+              await navigator.share({ title: 'Отчёт Mekha Shop', files: [file] });
             } else {
-              setModalAlert({ title: 'Поделиться недоступно', message: 'Браузер не поддерживает системное меню отправки.', type: 'error' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = file.name;
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 30000);
+              setModalAlert({ title: 'PDF сохранён', message: 'На этом устройстве нельзя отправить файл напрямую. PDF скачан — прикрепите его к сообщению контакту.', type: 'success' });
             }
           } catch (error) {
-            if (error.name !== 'AbortError') setModalAlert({ title: 'Ошибка отправки', message: 'Не удалось открыть меню отправки.', type: 'error' });
+            if (error.name !== 'AbortError') {
+              console.error('PDF share failed:', error);
+              setModalAlert({ title: 'Ошибка отправки', message: error.message || 'Не удалось подготовить PDF для отправки.', type: 'error' });
+            }
           }
         };
 
