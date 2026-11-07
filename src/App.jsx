@@ -699,7 +699,7 @@ useEffect(() => {
 
   const fetchDashboardSummary = async () => {
     try {
-      const response = await fetch(\`\${BACKEND_URL}/api/dashboard-summary\`);
+      const response = await fetch(`${BACKEND_URL}/api/dashboard-summary`);
       if (!response.ok) throw new Error('Не удалось загрузить сводку');
       const data = await response.json();
       if (data.success) setDashboardSummary(data.summary);
@@ -1715,26 +1715,26 @@ const handleSavePurchaseBatch = async (e) => {
               </div>
 
               <div className={`p-3 rounded-2xl border text-[10px] flex flex-col gap-1 ${isDarkMode ? 'bg-[#2B323D] border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-500'}`}>
-                <div className="flex items-center gap-1.5"><RefreshCw size={12} className={loading ? 'animate-spin' : ''} /><span>{loading ? 'Проверяем актуальный курс…' : 'Автоматическая проверка каждые 5 минут'}</span></div>
+                <div className="flex items-center gap-1.5"><RefreshCw size={12} className={loading ? 'animate-spin' : ''} /><span>{loading ? 'Проверяем актуальный курс…' : 'Проверка источника каждые 3 секунды'}</span></div>
                 <span>Источник обновил данные: {rates.sourceUpdatedAt ? new Date(rates.sourceUpdatedAt).toLocaleString('ru-RU') : 'ожидаем первую загрузку'}</span>
                 <span>Последняя проверка: {rates.checkedAt ? new Date(rates.checkedAt).toLocaleTimeString('ru-RU') : '—'}. Частота изменения зависит от поставщика данных.</span>
               </div>
             </div>
 
             {/* ФИНАНСОВАЯ СВОДКА И СКЛАД */}
-            <div className={\`\rounded-2xl border p-3 shadow-sm space-y-3 \${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}\`}>
+            <div className={`\rounded-2xl border p-3 shadow-sm space-y-3 ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Сводка за сегодня</h3>
                 <span className="text-[9px] text-gray-400">Обновление 30 сек.</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div className={\`\rounded-xl p-2.5 \${isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50/70'}\`}>
+                <div className={`\rounded-xl p-2.5 ${isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50/70'}`}>
                   <p className="text-[10px] text-gray-400">Выручка</p>
                   <p className="text-base font-extrabold mt-0.5">{Number(dashboardSummary?.revenueTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
                 </div>
-                <div className={\`\rounded-xl p-2.5 \${isDarkMode ? 'bg-[#343D49]' : 'bg-emerald-50/70'}\`}>
+                <div className={`\rounded-xl p-2.5 ${isDarkMode ? 'bg-[#343D49]' : 'bg-emerald-50/70'}`}>
                   <p className="text-[10px] text-gray-400">Чистая прибыль*</p>
-                  <p className={\`text-base font-extrabold mt-0.5 \${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}\`}>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
+                  <p className={`text-base font-extrabold mt-0.5 ${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
