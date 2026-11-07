@@ -2284,7 +2284,7 @@ const handleSavePurchaseBatch = async (e) => {
           })} сом.`;
         const batchTitle = batch => {
           const firstLine = String(batch.notes || '').split(/\r?\n/)[0].trim();
-          return firstLine || \`Поставка №\${batch.batchNumber}\`;
+          return firstLine || ('Поставка №' + batch.batchNumber);
         };
         const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
           '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
