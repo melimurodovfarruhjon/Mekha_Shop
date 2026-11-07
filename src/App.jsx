@@ -2376,7 +2376,7 @@ const handleSavePurchaseBatch = async (e) => {
 
             // Таблица
             const columns = [
-              { label: 'ТОВАР', width: 345, align: 'left' },
+              { label: 'Товар', width: 300, align: 'left' },
               { label: 'Привезено, шт.', width: 135, align: 'right' },
               { label: 'Продано, шт.', width: 125, align: 'right' },
               { label: 'Остаток, шт.', width: 115, align: 'right' },
