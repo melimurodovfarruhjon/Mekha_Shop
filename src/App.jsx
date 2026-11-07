@@ -1972,9 +1972,8 @@ const handleSavePurchaseBatch = async (e) => {
         {/* РАЗДЕЛ КУРЬЕР / ОТПРАВКИ */}
         <section className="w-1/4 h-full flex-none overflow-y-auto p-3 pb-24">
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div>
               <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Отправка заказов в Telegram</h2>
-              <span className="text-[10px] bg-rose-100 text-[#58111A] px-2 py-0.5 rounded-full font-medium">Всего: {deliveries.length}</span>
             </div>
 
             {/* Форма отправки */}
