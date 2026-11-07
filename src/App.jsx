@@ -1653,11 +1653,11 @@ const handleSavePurchaseBatch = async (e) => {
               <div className="absolute right-[-10px] bottom-[-20px] opacity-10 text-8xl font-bold">M</div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-white">Сегодняшний итог</h3>
               <div className="grid grid-cols-2 gap-2">
-                <div className={`rounded-xl p-2.5 ${bg-white/10}`}>
+                <div className="rounded-xl p-2.5 bg-white/10">
                   <p className="text-[10px] text-rose-200">Выручка</p>
                   <p className="text-base font-extrabold mt-0.5">{Number(dashboardSummary?.revenueTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-rose-200">TJS</span></p>
                 </div>
-                <div className={`rounded-xl p-2.5 ${bg-white/10}`}>
+                <div className="rounded-xl p-2.5 bg-white/10">
                   <p className="text-[10px] text-rose-200">Чистая прибыль*</p>
                   <p className={`text-base font-extrabold mt-0.5 ${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-300' : 'text-rose-200'}`}>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-rose-200">TJS</span></p>
                 </div>
