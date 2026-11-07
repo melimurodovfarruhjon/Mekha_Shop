@@ -1106,10 +1106,19 @@ const handleSavePurchaseBatch = async (e) => {
     cargoCurrency: 'USD'
   };
 
-  // Создаём товар только в каталоге.
-  // Пользователь выбирает его отдельным нажатием в списке ниже,
-  // поэтому повторное нажатие не снимает только что созданный товар.
+  // Создаём товар и сразу добавляем его в текущую поставку.
+  // Не требуем повторного нажатия в каталоге: это предотвращает
+  // случайное снятие только что выбранной модели.
   setProducts(prev => [newProduct, ...prev]);
+  setBatchItems(prev => [
+    ...prev.filter(item => item.productId),
+    {
+      ...createEmptyBatchItem(),
+      productId: String(newProduct.id),
+      productTitle: newProduct.title,
+      productPhoto: newProduct.photo
+    }
+  ]);
 
   setBatchNewProductTitle('');
   setBatchNewProductPhoto('');
@@ -2780,15 +2789,6 @@ const handleSavePurchaseBatch = async (e) => {
 
         <button
           type="button"
-          disabled={!batchNewProductTitle.trim()}
-          onClick={handleCreateBatchProduct}
-          className="w-full bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-40"
-        >
-          Создать и выбрать модель
-        </button>
-
-        <button
-          type="button"
           onClick={() => setShowBatchProductCreation(false)}
           className="w-full py-2 text-xs text-gray-400 font-semibold"
         >
@@ -2812,8 +2812,17 @@ const handleSavePurchaseBatch = async (e) => {
 
       <button
         type="button"
-        disabled={!batchItems.some(item => item.productId)}
-        onClick={() => setBatchStep(3)}
+        disabled={showBatchProductCreation
+          ? !batchNewProductTitle.trim()
+          : !batchItems.some(item => item.productId)}
+        onClick={() => {
+          if (showBatchProductCreation) {
+            handleCreateBatchProduct();
+            setBatchStep(3);
+            return;
+          }
+          setBatchStep(3);
+        }}
         className="flex-1 bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold disabled:opacity-40"
       >
         Далее
