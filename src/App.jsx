@@ -2413,6 +2413,20 @@ const handleSavePurchaseBatch = async (e) => {
                               );
                             })}
                           </tbody>
+                          <tfoot className={isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50'}>
+                            <tr className="border-t-2 border-gray-300/30 font-bold">
+                              <td className="px-3 py-3">Итого</td>
+                              <td className="px-3 py-3 text-right tabular-nums">{totalDelivered}</td>
+                              <td className="px-3 py-3 text-right tabular-nums">{totalSold}</td>
+                              <td className="px-3 py-3 text-right tabular-nums">{totalRemaining}</td>
+                              <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
+                                {formatReportMoney(totalRevenue)}{hasMissingPrices ? ' *' : ''}
+                              </td>
+                              <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums text-emerald-500">
+                                {formatReportMoney(totalProfit)}{hasMissingPrices ? ' *' : ''}
+                              </td>
+                            </tr>
+                          </tfoot>
                         </table>
                       </div>
                     </div>
@@ -2421,25 +2435,13 @@ const handleSavePurchaseBatch = async (e) => {
                       <p className="text-center text-sm text-gray-400 py-6">В этой поставке нет товарных позиций.</p>
                     )}
 
-                    <div className={`rounded-2xl p-4 space-y-3 ${
-                      isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50'
-                    }`}>
-                      <div className="flex justify-between gap-3 text-sm">
-                        <span className="text-gray-400">Общая выручка</span>
-                        <span className="font-bold text-right">{formatReportMoney(totalRevenue)}</span>
+                    {hasMissingPrices && (
+                      <div className={`rounded-xl p-3 text-[11px] text-amber-500 ${
+                        isDarkMode ? 'bg-amber-950/20' : 'bg-amber-50'
+                      }`}>
+                        * Финансовые данные частичные: для части продаж цена продажи не была зафиксирована.
                       </div>
-                      <div className="flex justify-between gap-3 text-sm">
-                        <span className="text-gray-400">Общая чистая прибыль</span>
-                        <span className={`font-bold text-right ${totalProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                          {formatReportMoney(totalProfit)}
-                        </span>
-                      </div>
-                      {hasMissingPrices && (
-                        <p className="text-[11px] text-amber-500">
-                          Примечание: * — финансовые данные частичные, так как цена продажи не была зафиксирована для части продаж.
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </>
                 ) : purchaseReports.length === 0 ? (
                   <div className="py-12 text-center space-y-2">
