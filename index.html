@@ -3,6 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <!-- Применяем сохранённую тему до первого отображения страницы,
+         чтобы не было вспышки светлого фона при запуске React. -->
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem('mekha_theme_mode') === 'dark' ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-mekha-theme', theme);
+        } catch (_) {
+          document.documentElement.setAttribute('data-mekha-theme', 'light');
+        }
+      })();
+    </script>
+    <style>
+      html, body {
+        min-height: 100%;
+        background-color: #FAF8F5;
+      }
+      html[data-mekha-theme="dark"],
+      html[data-mekha-theme="dark"] body {
+        background-color: #202630 !important;
+        color-scheme: dark;
+      }
+      html[data-mekha-theme="light"],
+      html[data-mekha-theme="light"] body {
+        background-color: #FAF8F5;
+        color-scheme: light;
+      }
+    </style>
     <title>Mekha Shop — Закупки и Учет</title>
 
     <!-- Иконка для вкладки в браузере (ПК и Android) -->
@@ -32,7 +61,7 @@
     </script>
 
   </head>
-  <body class="bg-[#FAF8F5] text-gray-900 antialiased select-none">
+  <body class="text-gray-900 antialiased select-none">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>  </body>
 </html>
