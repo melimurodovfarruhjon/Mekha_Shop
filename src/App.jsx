@@ -2380,7 +2380,7 @@ const handleSavePurchaseBatch = async (e) => {
                       <FileText size={15} /> PDF
                     </button>
                     <button type="button" onClick={sharePurchaseReport} title="Поделиться сводкой" aria-label="Поделиться отчётом" className="h-9 px-2 rounded-lg bg-[#58111A] text-white text-[11px] font-bold">
-                      Поделиться
+                      Отпр.
                     </button>
                   </div>
                 )}
@@ -2414,15 +2414,15 @@ const handleSavePurchaseBatch = async (e) => {
 
                     <div className="grid grid-cols-3 gap-2">
                       <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
-                        <p className="text-[10px] text-gray-400">Привезено</p>
+                        <p className="text-[10px] text-gray-400">Прив.</p>
                         <p className="text-lg font-bold">{totalDelivered}</p>
                       </div>
                       <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
-                        <p className="text-[10px] text-gray-400">Продано</p>
+                        <p className="text-[10px] text-gray-400">Прод.</p>
                         <p className="text-lg font-bold">{totalSold}</p>
                       </div>
                       <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
-                        <p className="text-[10px] text-gray-400">Осталось</p>
+                        <p className="text-[10px] text-gray-400">Ост.</p>
                         <p className="text-lg font-bold">{totalRemaining}</p>
                       </div>
                     </div>
