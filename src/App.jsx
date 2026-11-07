@@ -533,6 +533,7 @@ useEffect(() => {
   const [prodWholesaleCurrency, setProdWholesaleCurrency] = useState('CNY');
   const [prodCargoCost, setProdCargoCost] = useState('');
   const [prodCargoCurrency, setProdCargoCurrency] = useState('USD');
+  const [prodSalePrice, setProdSalePrice] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [currentPhotoPreview, setCurrentPhotoPreview] = useState(null);
   const [isQuickAddMenuOpen, setIsQuickAddMenuOpen] = useState(false);
@@ -1055,7 +1056,7 @@ const handleSavePurchaseBatch = async (e) => {
         data.error || `Не удалось сохранить партию (HTTP ${response.status})`
       );
     }
-    await loadProducts();
+    loadProducts().catch(error => console.error('Catalog refresh failed:', error));
     localStorage.removeItem(BATCH_DRAFT_KEY);
     setBatchItems([]);
     setBatchNotes('');
@@ -1153,7 +1154,10 @@ const handleSavePurchaseBatch = async (e) => {
           },
           body: JSON.stringify({
             title: cleanTitle,
-            photo: currentPhotoPreview || ''
+            photo: currentPhotoPreview || '',
+            totalWholesaleTjs: Number(prodWholesale || 0),
+            cargoCostTjs: Number(prodCargoCost || 0),
+            salePriceTjs: Number(prodSalePrice || 0)
           })
         }
       );
@@ -1189,6 +1193,7 @@ const handleSavePurchaseBatch = async (e) => {
     setProdQty('');
     setProdWholesale('');
     setProdCargoCost('');
+    setProdSalePrice('');
     setSelectedImageFile(null);
     setCurrentPhotoPreview(null);
     setIsAddModalOpen(false);
@@ -1198,7 +1203,7 @@ const handleSavePurchaseBatch = async (e) => {
         ? 'Изменения сохранены'
         : 'Модель добавлена',
       message: currentEditingId
-        ? 'Название и фотография товара обновлены на сервере.'
+        ? 'Данные товара и финансовые значения обновлены на сервере.'
         : 'Модель добавлена. Для появления остатка оформите поставку.',
       type: 'success'
     });
@@ -1222,6 +1227,7 @@ const handleSavePurchaseBatch = async (e) => {
     setProdWholesaleCurrency(p.wholesaleCurrency);
     setProdCargoCost(p.cargoCost.toString());
     setProdCargoCurrency(p.cargoCurrency);
+    setProdSalePrice(p.salePriceTjs.toString());
     setCurrentPhotoPreview(p.photo);
     setIsAddModalOpen(true);
   };
@@ -1232,6 +1238,7 @@ const handleSavePurchaseBatch = async (e) => {
     setProdQty('6');
     setProdWholesale('');
     setProdCargoCost('');
+    setProdSalePrice('');
     setSelectedImageFile(null);
     setCurrentPhotoPreview(null);
     setIsAddModalOpen(false);
@@ -2341,7 +2348,7 @@ const handleSavePurchaseBatch = async (e) => {
 
         <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">
           {editingId
-            ? 'Измените название или фотографию товара.'
+            ? 'Измените название, фото, закупочную стоимость, карго и цену продажи.'
             : 'Создайте карточку товара. Закупку и количество добавите позже через новую поставку.'}
         </p>
       </div>
@@ -2401,6 +2408,23 @@ const handleSavePurchaseBatch = async (e) => {
             Фотография необязательна. Можно добавить её позже.
           </p>
         </div>
+
+        {editingId && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold">Закупка всего (TJS)</label>
+              <input type="number" min="0" step="0.01" value={prodWholesale} onChange={e => setProdWholesale(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold">Карго всего (TJS)</label>
+              <input type="number" min="0" step="0.01" value={prodCargoCost} onChange={e => setProdCargoCost(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold">Цена продажи (TJS)</label>
+              <input type="number" min="0" step="0.01" value={prodSalePrice} onChange={e => setProdSalePrice(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+            </div>
+          </div>
+        )}
 
         {/* ПОЯСНЕНИЕ */}
         {!editingId && (
