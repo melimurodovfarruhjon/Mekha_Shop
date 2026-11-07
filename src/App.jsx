@@ -201,6 +201,12 @@ const handleTouchCancel = () => {
   // Кастомное уведомление
   const [modalAlert, setModalAlert] = useState(null);
 
+  // Чат службы поддержки
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportSending, setSupportSending] = useState(false);
+  const [supportHistory, setSupportHistory] = useState([]);
+
   // СПИСОК КУРЬЕРОВ
   const [couriers, setCouriers] = useState(() => {
     const saved = localStorage.getItem('mekha_couriers');
@@ -1323,6 +1329,15 @@ const handleSavePurchaseBatch = async (e) => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsSupportOpen(true)}
+            className="bg-black/30 p-2 rounded-xl text-rose-100 active:scale-95 transition-transform relative"
+            title="Служба поддержки"
+            aria-label="Открыть службу поддержки"
+          >
+            <MessageSquare size={17} />
+          </button>
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="bg-black/30 p-2 rounded-xl text-rose-100 active:scale-95 transition-transform"
@@ -3479,6 +3494,82 @@ const handleSavePurchaseBatch = async (e) => {
           </div>
         )}
 
+
+
+      {isSupportOpen && (
+        <div className="fixed inset-0 z-[80] bg-black/60 flex items-end sm:items-center justify-center p-3">
+          <div className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[82vh] ${isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'}`}>
+            <div className="bg-[#58111A] text-white px-4 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+                  <MessageSquare size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm">Служба поддержки</h3>
+                  <p className="text-[11px] text-rose-200">Напишите нам — мы ответим</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setIsSupportOpen(false)} className="p-2 rounded-xl hover:bg-white/10" aria-label="Закрыть чат">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 min-h-[220px] space-y-3">
+              <div className={`rounded-2xl rounded-tl-sm p-3 text-sm max-w-[90%] ${isDarkMode ? 'bg-[#303030]' : 'bg-rose-50'}`}>
+                Здравствуйте! Опишите ваш вопрос. Сообщение поступит в службу поддержки Mekha Shop.
+              </div>
+              {supportHistory.map((item, index) => (
+                <div key={index} className="flex justify-end">
+                  <div className="max-w-[90%] rounded-2xl rounded-tr-sm bg-[#58111A] text-white p-3 text-sm break-words">
+                    {item.text}
+                    <p className="text-[10px] text-rose-200 mt-1">{item.status}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <form
+              className={`p-3 border-t flex items-end gap-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const text = supportMessage.trim();
+                if (!text || supportSending) return;
+                setSupportSending(true);
+                try {
+                  const response = await fetch(`${BACKEND_URL}/api/support-message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                  });
+                  const result = await response.json().catch(() => ({}));
+                  if (!response.ok) throw new Error(result.error || 'Не удалось отправить сообщение');
+                  setSupportHistory(prev => [...prev, { text, status: 'Отправлено' }]);
+                  setSupportMessage('');
+                } catch (error) {
+                  setSupportHistory(prev => [...prev, { text, status: 'Ошибка отправки. Попробуйте ещё раз.' }]);
+                } finally {
+                  setSupportSending(false);
+                }
+              }}
+            >
+              <textarea
+                value={supportMessage}
+                onChange={(e) => setSupportMessage(e.target.value)}
+                placeholder="Напишите сообщение..."
+                rows={2}
+                maxLength={2000}
+                className={`flex-1 resize-none rounded-2xl px-3 py-2.5 text-sm outline-none border ${isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+              />
+              <button
+                type="submit"
+                disabled={!supportMessage.trim() || supportSending}
+                className="w-11 h-11 shrink-0 rounded-2xl bg-[#58111A] text-white flex items-center justify-center disabled:opacity-40"
+                aria-label="Отправить сообщение"
+              >
+                {supportSending ? <RefreshCw size={17} className="animate-spin" /> : <TelegramIcon size={18} />}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Нижняя навигация */}
       <nav className={`flex justify-around items-center border-t h-20 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20 shadow-lg px-2 transition-colors ${
