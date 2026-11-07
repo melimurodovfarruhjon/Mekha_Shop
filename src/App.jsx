@@ -2422,7 +2422,7 @@ const handleSavePurchaseBatch = async (e) => {
                               <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
                                 {formatReportMoney(totalRevenue)}{hasMissingPrices ? ' *' : ''}
                               </td>
-                              <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums text-emerald-500">
+                              <td className={`px-3 py-3 text-right whitespace-nowrap tabular-nums ${totalProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                 {formatReportMoney(totalProfit)}{hasMissingPrices ? ' *' : ''}
                               </td>
                             </tr>
