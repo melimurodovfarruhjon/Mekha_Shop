@@ -1106,17 +1106,10 @@ const handleSavePurchaseBatch = async (e) => {
     cargoCurrency: 'USD'
   };
 
+  // Создаём товар только в каталоге.
+  // Пользователь выбирает его отдельным нажатием в списке ниже,
+  // поэтому повторное нажатие не снимает только что созданный товар.
   setProducts(prev => [newProduct, ...prev]);
-
-  setBatchItems(prev => [
-  ...prev,
-  {
-    ...createEmptyBatchItem(),
-    productId: String(newProduct.id),
-    productTitle: newProduct.title,
-    productPhoto: newProduct.photo
-  }
-]);
 
   setBatchNewProductTitle('');
   setBatchNewProductPhoto('');
