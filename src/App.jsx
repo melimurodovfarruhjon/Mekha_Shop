@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2, FileText, Share2, Bell, PackageCheck } from 'lucide-react';
+import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2, FileText, Share2, Bell, PackageCheck, EyeOff } from 'lucide-react';
 
 // --- КОНФИГУРАЦИЯ БОТА И СЕРВЕРА ---
 const BACKEND_URL = "https://mekhaserver-production.up.railway.app"; // Ваша ссылка с Render
@@ -189,6 +189,7 @@ const handleTouchCancel = () => {
   const [notificationsExpanded, setNotificationsExpanded] = useState(false);
   const [rateHistory, setRateHistory] = useState([]);
   const [dashboardSummary, setDashboardSummary] = useState(null);
+  const [isFinancialSummaryHidden, setIsFinancialSummaryHidden] = useState(false);
 
   // Тема
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -1648,33 +1649,40 @@ const handleSavePurchaseBatch = async (e) => {
 
           <div className="space-y-4">
             
-            {/* ФИНАНСОВАЯ СВОДКА И СКЛАД */}
-            <div className="bg-gradient-to-br from-[#58111A] to-[#3d0b12] text-white p-5 rounded-3xl shadow-md space-y-3 relative overflow-hidden">
-              <div className="absolute right-[-10px] bottom-[-20px] opacity-10 text-8xl font-bold">M</div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Сегодняшний итог</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl p-2.5 bg-white/10">
+            {/* ФИНАНСОВАЯ СВОДКА */}
+            <div className="bg-gradient-to-br from-[#58111A] to-[#3d0b12] text-white p-5 rounded-3xl shadow-md space-y-4 relative overflow-hidden">
+              <div className="absolute right-[-10px] bottom-[-20px] opacity-10 text-8xl font-bold pointer-events-none">M</div>
+              <div className="flex items-center justify-between gap-3 relative z-10">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-white">Сегодняшний итог</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsFinancialSummaryHidden(hidden => !hidden)}
+                  className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/10 hover:bg-white/20 active:scale-95 transition-all"
+                  aria-label={isFinancialSummaryHidden ? 'Показать выручку и прибыль' : 'Скрыть выручку и прибыль'}
+                  title={isFinancialSummaryHidden ? 'Показать суммы' : 'Скрыть суммы'}
+                >
+                  {isFinancialSummaryHidden ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 relative z-10">
+                <div className="rounded-xl p-3.5 bg-white/10 min-h-[76px]">
                   <p className="text-[10px] text-rose-200">Выручка</p>
-                  <p className="text-base font-extrabold mt-0.5">{Number(dashboardSummary?.revenueTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-rose-200">TJS</span></p>
+                  <p className="text-base font-extrabold mt-1">
+                    {isFinancialSummaryHidden ? '••••••' : <>{Number(dashboardSummary?.revenueTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-rose-200">TJS</span></>}
+                  </p>
                 </div>
-                <div className="rounded-xl p-2.5 bg-white/10">
+                <div className="rounded-xl p-3.5 bg-white/10 min-h-[76px]">
                   <p className="text-[10px] text-rose-200">Чистая прибыль*</p>
-                  <p className={`text-base font-extrabold mt-0.5 ${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-300' : 'text-rose-200'}`}>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-rose-200">TJS</span></p>
+                  <p className={`text-base font-extrabold mt-1 ${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-300' : 'text-rose-200'}`}>
+                    {isFinancialSummaryHidden ? '••••••' : <>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-rose-200">TJS</span></>}
+                  </p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div><p className="text-sm font-bold">{dashboardSummary?.deliveredToday ?? '—'}</p><p className="text-[9px] text-rose-200">Доставлено</p></div>
-                <div><p className="text-sm font-bold">{dashboardSummary?.pendingOrders ?? '—'}</p><p className="text-[9px] text-rose-200">В пути</p></div>
-                <div><p className="text-sm font-bold">{dashboardSummary?.unitsSold ?? '—'}</p><p className="text-[9px] text-rose-200">Продано шт.</p></div>
+              <div className="grid grid-cols-3 gap-2 text-center pt-1 relative z-10">
+                <div><p className="text-base font-bold">{dashboardSummary?.deliveredToday ?? '—'}</p><p className="text-[10px] text-rose-200 mt-0.5">Доставлено</p></div>
+                <div><p className="text-base font-bold">{dashboardSummary?.pendingOrders ?? '—'}</p><p className="text-[10px] text-rose-200 mt-0.5">В пути</p></div>
+                <div><p className="text-base font-bold">{dashboardSummary?.unitsSold ?? '—'}</p><p className="text-[10px] text-rose-200 mt-0.5">Продано шт.</p></div>
               </div>
-              <div className="border-t border-white/20 pt-2 flex items-center justify-between gap-2">
-                <div><p className="text-[10px] font-semibold">Склад</p><p className="text-[9px] text-rose-200">Товаров с остатком: {dashboardSummary?.productsInStock ?? '—'}</p></div>
-                <div className="flex gap-2 text-[9px] font-semibold">
-                  <span className="text-amber-600">Мало: {dashboardSummary?.lowStockProducts ?? '—'}</span>
-                  <span className="text-rose-200">Нет: {dashboardSummary?.outOfStockProducts ?? '—'}</span>
-                </div>
-              </div>
-              <p className="text-[9px] text-rose-200">*Прибыль рассчитана по подтверждённым продажам и сохранённой себестоимости.</p>
             </div>
 
             {/* УВЕДОМЛЕНИЯ О ДОСТАВКЕ */}
