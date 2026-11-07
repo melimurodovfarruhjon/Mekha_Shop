@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2, FileText } from 'lucide-react';
+import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2, FileText, Share2 } from 'lucide-react';
 
 // --- КОНФИГУРАЦИЯ БОТА И СЕРВЕРА ---
 const BACKEND_URL = "https://mekhaserver-production.up.railway.app"; // Ваша ссылка с Render
@@ -2292,12 +2292,22 @@ const handleSavePurchaseBatch = async (e) => {
         const buildPurchaseReportPdf = async () => {
           const pageWidth = 1123;
           const pageHeight = 794;
-          const margin = 54;
-          const rowHeight = 54;
-          const rowsPerPage = Math.max(1, Math.floor((pageHeight - 300) / rowHeight));
-          const pages = [];
-          const reportItems = items.length ? items : [];
+          const margin = 44;
+          const rowHeight = 44;
+          const rowsPerPage = 8;
+          const reportItems = items || [];
           const pageCount = Math.max(1, Math.ceil(reportItems.length / rowsPerPage));
+          const pages = [];
+          const money = value => Number(value || 0).toLocaleString('ru-RU', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+          const roundedRect = (ctx, x, y, width, height, radius, fill) => {
+            ctx.beginPath();
+            ctx.roundRect(x, y, width, height, radius);
+            ctx.fillStyle = fill;
+            ctx.fill();
+          };
 
           for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             const canvas = document.createElement('canvas');
@@ -2305,73 +2315,116 @@ const handleSavePurchaseBatch = async (e) => {
             canvas.height = pageHeight;
             const ctx = canvas.getContext('2d');
             if (!ctx) throw new Error('Не удалось подготовить PDF');
-            ctx.fillStyle = '#ffffff';
+
+            ctx.fillStyle = '#f7f5f3';
             ctx.fillRect(0, 0, pageWidth, pageHeight);
-            ctx.fillStyle = '#17202a';
-            ctx.font = 'bold 30px Arial, sans-serif';
-            ctx.fillText(batchTitle(selectedBatch), margin, 58, pageWidth - margin * 2);
-            ctx.fillStyle = '#64748b';
-            ctx.font = '18px Arial, sans-serif';
-            ctx.fillText('Поставка №' + selectedBatch.batchNumber + ' · ' + new Date(selectedBatch.purchasedAt).toLocaleString('ru-RU'), margin, 92);
+
+            // Фирменная шапка Mekha Shop
+            ctx.fillStyle = '#58111a';
+            ctx.fillRect(0, 0, pageWidth, 116);
+            roundedRect(ctx, margin, 24, 62, 62, 18, '#ffffff');
+            ctx.fillStyle = '#58111a';
+            ctx.font = 'bold 34px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('M', margin + 31, 66);
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 27px Arial, sans-serif';
+            ctx.fillText('MEKHA SHOP', margin + 82, 48);
+            ctx.fillStyle = '#f0dadd';
+            ctx.font = '15px Arial, sans-serif';
+            ctx.fillText('УЧЁТ ТОВАРОВ И ФИНАНСОВ', margin + 83, 74);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#f0dadd';
+            ctx.font = '14px Arial, sans-serif';
+            ctx.fillText('ОТЧЁТ ПО ПОСТАВКЕ', pageWidth - margin, 48);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 18px Arial, sans-serif';
+            ctx.fillText('№' + selectedBatch.batchNumber, pageWidth - margin, 76);
+
+            // Название и дата
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#24212a';
+            ctx.font = 'bold 25px Arial, sans-serif';
+            const heading = batchTitle(selectedBatch);
+            ctx.fillText(heading, margin, 158, pageWidth - margin * 2);
+            ctx.fillStyle = '#77727a';
+            ctx.font = '15px Arial, sans-serif';
+            ctx.fillText('Дата закупки: ' + new Date(selectedBatch.purchasedAt).toLocaleString('ru-RU'), margin, 184);
+
+            // Карточки итоговых количеств
             const summary = [
-              ['Привезено', totalDelivered],
-              ['Продано', totalSold],
-              ['Осталось', totalRemaining]
+              ['ПРИВЕЗЕНО', totalDelivered, '#58111a'],
+              ['ПРОДАНО', totalSold, '#344054'],
+              ['ОСТАЛОСЬ', totalRemaining, '#344054']
             ];
+            const cardGap = 16;
+            const cardWidth = (pageWidth - margin * 2 - cardGap * 2) / 3;
             summary.forEach((entry, index) => {
-              const x = margin + index * 245;
-              ctx.fillStyle = '#f1f5f9';
-              ctx.fillRect(x, 120, 220, 76);
-              ctx.fillStyle = '#64748b';
-              ctx.font = '16px Arial, sans-serif';
-              ctx.fillText(entry[0], x + 16, 148);
-              ctx.fillStyle = '#17202a';
-              ctx.font = 'bold 25px Arial, sans-serif';
-              ctx.fillText(String(entry[1]), x + 16, 181);
+              const x = margin + index * (cardWidth + cardGap);
+              roundedRect(ctx, x, 207, cardWidth, 76, 12, '#ffffff');
+              ctx.fillStyle = entry[2];
+              ctx.fillRect(x, 207, 5, 76);
+              ctx.fillStyle = '#89838a';
+              ctx.font = 'bold 13px Arial, sans-serif';
+              ctx.textAlign = 'left';
+              ctx.fillText(entry[0], x + 20, 235);
+              ctx.fillStyle = '#24212a';
+              ctx.font = 'bold 27px Arial, sans-serif';
+              ctx.fillText(String(entry[1]), x + 20, 267);
             });
 
+            // Таблица
             const columns = [
-              { label: 'Товар', x: margin, width: 350, align: 'left' },
-              { label: 'Прив.', x: 404, width: 110, align: 'right' },
-              { label: 'Прод.', x: 514, width: 110, align: 'right' },
-              { label: 'Ост.', x: 624, width: 100, align: 'right' },
-              { label: 'Выручка, TJS', x: 724, width: 170, align: 'right' },
-              { label: 'Прибыль, TJS', x: 894, width: 175, align: 'right' }
+              { label: 'ТОВАР', width: 345, align: 'left' },
+              { label: 'ПРИВ.', width: 95, align: 'right' },
+              { label: 'ПРОД.', width: 95, align: 'right' },
+              { label: 'ОСТ.', width: 85, align: 'right' },
+              { label: 'ВЫРУЧКА, TJS', width: 195, align: 'right' },
+              { label: 'ЧИСТАЯ ПРИБЫЛЬ, TJS', width: 220, align: 'right' }
             ];
-            let y = 232;
-            ctx.fillStyle = '#e2e8f0';
-            ctx.fillRect(margin, y, pageWidth - margin * 2, 48);
-            ctx.fillStyle = '#334155';
-            ctx.font = 'bold 16px Arial, sans-serif';
-            columns.forEach(col => ctx.textAlign = col.align);
-            columns.forEach(col => ctx.fillText(col.label, col.align === 'right' ? col.x + col.width - 8 : col.x + 10, y + 30, col.width - 16));
-            y += 48;
+            let columnX = margin;
+            columns.forEach(column => {
+              column.x = columnX;
+              columnX += column.width;
+            });
+            let y = 307;
+            roundedRect(ctx, margin, y, pageWidth - margin * 2, 42, 8, '#58111a');
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 13px Arial, sans-serif';
+            columns.forEach(column => {
+              ctx.textAlign = column.align;
+              ctx.fillText(column.label, column.align === 'right' ? column.x + column.width - 12 : column.x + 14, y + 26, column.width - 24);
+            });
+            y += 42;
 
             const pageItems = reportItems.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage);
             pageItems.forEach((item, rowIndex) => {
-              if (rowIndex % 2 === 0) {
-                ctx.fillStyle = '#f8fafc';
-                ctx.fillRect(margin, y, pageWidth - margin * 2, rowHeight);
-              }
-              ctx.fillStyle = '#17202a';
-              ctx.font = '16px Arial, sans-serif';
+              ctx.fillStyle = rowIndex % 2 === 0 ? '#ffffff' : '#f0ece9';
+              ctx.fillRect(margin, y, pageWidth - margin * 2, rowHeight);
+              ctx.fillStyle = '#302b31';
+              ctx.font = '15px Arial, sans-serif';
               const title = String(item.title || 'Товар');
               let displayTitle = title;
-              while (ctx.measureText(displayTitle).width > 325 && displayTitle.length > 4) displayTitle = displayTitle.slice(0, -2) + '…';
+              while (ctx.measureText(displayTitle).width > 315 && displayTitle.length > 4) displayTitle = displayTitle.slice(0, -2) + '…';
               ctx.textAlign = 'left';
-              ctx.fillText(displayTitle, margin + 10, y + 32, 325);
+              ctx.fillText(displayTitle, margin + 14, y + 27, 315);
               const values = [
                 Number(item.deliveredQuantity) || 0,
                 Number(item.soldQuantity) || 0,
                 Number(item.remainingQuantity) || 0,
-                (Number(item.revenueTjs) || 0).toFixed(2) + (item.hasMissingSalePrice ? ' *' : ''),
-                (Number(item.profitTjs) || 0).toFixed(2) + (item.hasMissingSalePrice ? ' *' : '')
+                money(item.revenueTjs) + (item.hasMissingSalePrice ? ' *' : ''),
+                money(item.profitTjs) + (item.hasMissingSalePrice ? ' *' : '')
               ];
-              columns.slice(1).forEach((col, index) => {
+              columns.slice(1).forEach((column, index) => {
                 ctx.textAlign = 'right';
-                ctx.fillText(String(values[index]), col.x + col.width - 8, y + 32, col.width - 16);
+                ctx.fillStyle = index === 4
+                  ? ((Number(item.profitTjs) || 0) >= 0 ? '#16804a' : '#c0392b')
+                  : '#302b31';
+                ctx.font = index === 4 ? 'bold 14px Arial, sans-serif' : '14px Arial, sans-serif';
+                ctx.fillText(String(values[index]), column.x + column.width - 12, y + 27, column.width - 24);
               });
-              ctx.strokeStyle = '#e2e8f0';
+              ctx.strokeStyle = '#e7e0dc';
               ctx.beginPath();
               ctx.moveTo(margin, y + rowHeight);
               ctx.lineTo(pageWidth - margin, y + rowHeight);
@@ -2380,30 +2433,45 @@ const handleSavePurchaseBatch = async (e) => {
             });
 
             if (pageIndex === pageCount - 1) {
-              ctx.fillStyle = '#e2e8f0';
-              ctx.fillRect(margin, y, pageWidth - margin * 2, 52);
-              ctx.fillStyle = '#17202a';
-              ctx.font = 'bold 17px Arial, sans-serif';
+              ctx.fillStyle = '#eee5e2';
+              ctx.fillRect(margin, y, pageWidth - margin * 2, 48);
+              ctx.fillStyle = '#302b31';
+              ctx.font = 'bold 15px Arial, sans-serif';
               ctx.textAlign = 'left';
-              ctx.fillText('Итого', margin + 10, y + 33);
-              const totals = [totalDelivered, totalSold, totalRemaining, totalRevenue.toFixed(2), totalProfit.toFixed(2)];
-              columns.slice(1).forEach((col, index) => {
+              ctx.fillText('ИТОГО', margin + 14, y + 30);
+              const totals = [totalDelivered, totalSold, totalRemaining, money(totalRevenue), money(totalProfit)];
+              columns.slice(1).forEach((column, index) => {
                 ctx.textAlign = 'right';
-                ctx.fillText(String(totals[index]), col.x + col.width - 8, y + 33, col.width - 16);
+                ctx.fillStyle = index === 4 ? (totalProfit >= 0 ? '#16804a' : '#c0392b') : '#302b31';
+                ctx.font = 'bold 14px Arial, sans-serif';
+                ctx.fillText(String(totals[index]), column.x + column.width - 12, y + 30, column.width - 24);
               });
-              y += 52;
+              y += 48;
             }
+
             if (hasMissingPrices) {
-              ctx.fillStyle = '#92400e';
-              ctx.font = '14px Arial, sans-serif';
+              ctx.fillStyle = '#fff4df';
+              roundedRect(ctx, margin, Math.min(y + 12, 704), pageWidth - margin * 2, 34, 7, '#fff4df');
+              ctx.fillStyle = '#946200';
               ctx.textAlign = 'left';
-              ctx.fillText('* Для части продаж цена не была зафиксирована; финансовые данные неполные.', margin, Math.min(y + 28, pageHeight - 30), pageWidth - margin * 2);
+              ctx.font = '12px Arial, sans-serif';
+              ctx.fillText('* Для части продаж цена не была зафиксирована. Финансовые показатели неполные.', margin + 12, Math.min(y + 34, 726), pageWidth - margin * 2 - 24);
             }
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = '13px Arial, sans-serif';
+
+            // Подвал
+            ctx.strokeStyle = '#e2d9d4';
+            ctx.beginPath();
+            ctx.moveTo(margin, 750);
+            ctx.lineTo(pageWidth - margin, 750);
+            ctx.stroke();
+            ctx.fillStyle = '#8b858a';
+            ctx.font = '12px Arial, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Mekha Shop · Отчёт сформирован автоматически', margin, 773);
             ctx.textAlign = 'right';
-            ctx.fillText('Mekha Shop · ' + (pageIndex + 1) + '/' + pageCount, pageWidth - margin, pageHeight - 20);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+            ctx.fillText('Страница ' + (pageIndex + 1) + ' из ' + pageCount, pageWidth - margin, 773);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
             const binary = atob(dataUrl.split(',')[1]);
             const jpeg = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) jpeg[i] = binary.charCodeAt(i);
@@ -2414,17 +2482,14 @@ const handleSavePurchaseBatch = async (e) => {
           const chunks = [];
           const offsets = [0];
           let byteLength = 0;
-          const push = chunk => {
-            chunks.push(chunk);
-            byteLength += chunk.length;
-          };
+          const push = chunk => { chunks.push(chunk); byteLength += chunk.length; };
           const pushText = text => push(encoder.encode(text));
           const objectCount = 2 + pages.length * 3;
           pushText('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
-          const addObject = (id, parts) => {
+          const addObject = (id, objectParts) => {
             offsets[id] = byteLength;
             pushText(id + ' 0 obj\n');
-            parts.forEach(part => typeof part === 'string' ? pushText(part) : push(part));
+            objectParts.forEach(part => typeof part === 'string' ? pushText(part) : push(part));
             pushText('\nendobj\n');
           };
           addObject(1, ['<< /Type /Catalog /Pages 2 0 R >>']);
@@ -2444,22 +2509,6 @@ const handleSavePurchaseBatch = async (e) => {
           for (let id = 1; id <= objectCount; id++) pushText(String(offsets[id]).padStart(10, '0') + ' 00000 n \n');
           pushText('trailer\n<< /Size ' + (objectCount + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF');
           return new Blob(chunks, { type: 'application/pdf' });
-        };
-        const exportPurchaseReportPdf = async () => {
-          try {
-            const blob = await buildPurchaseReportPdf();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'Mekha-Shop-report-' + selectedBatch.batchNumber + '.pdf';
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 30000);
-          } catch (error) {
-            console.error('PDF export failed:', error);
-            setModalAlert({ title: 'Ошибка PDF', message: error.message || 'Не удалось создать PDF.', type: 'error' });
-          }
         };
         const sharePurchaseReport = async () => {
           try {
@@ -2515,14 +2564,9 @@ const handleSavePurchaseBatch = async (e) => {
                   </p>
                 </div>
                 {selectedBatch && (
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button type="button" onClick={exportPurchaseReportPdf} title="Сохранить как PDF" aria-label="Сохранить отчёт как PDF" className="h-9 px-2 rounded-lg text-[11px] font-bold flex items-center gap-1 bg-gray-500/10">
-                      <FileText size={15} /> PDF
-                    </button>
-                    <button type="button" onClick={sharePurchaseReport} title="Поделиться сводкой" aria-label="Поделиться отчётом" className="h-9 px-2 rounded-lg bg-[#58111A] text-white text-[11px] font-bold">
-                      Отпр.
-                    </button>
-                  </div>
+                  <button type="button" onClick={sharePurchaseReport} title="Поделиться PDF-отчётом" aria-label="Поделиться PDF-отчётом" className="h-9 px-3 rounded-xl bg-[#58111A] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-sm active:scale-95 transition-transform">
+                    <Share2 size={15} /> Поделиться
+                  </button>
                 )}
                 <button type="button" onClick={() => { setIsReportModalOpen(false); setSelectedReportBatchId(null); }} className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 shrink-0" aria-label="Закрыть отчёты">
                   <X size={19} />
