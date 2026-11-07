@@ -40,7 +40,7 @@ const ImageUploader = ({ onImageUpload, currentPreview, isDarkMode }) => {
         onClick={() => fileInputRef.current.click()}
         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 border rounded-xl text-xs font-semibold shadow-sm active:scale-95 transition-all ${
           isDarkMode 
-            ? 'bg-[#2A2A2A] border-gray-700 text-rose-300 hover:border-rose-400' 
+            ? 'bg-[#3D4754] border-gray-700 text-rose-300 hover:border-rose-400' 
             : 'bg-white border-rose-200 text-[#58111A] hover:border-[#58111A]'
         }`}
       >
@@ -49,7 +49,7 @@ const ImageUploader = ({ onImageUpload, currentPreview, isDarkMode }) => {
       </button>
 
       <div className={`w-11 h-11 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden flex-shrink-0 shadow-inner ${
-        isDarkMode ? 'border-gray-700 bg-[#252525]' : 'border-rose-100 bg-white'
+        isDarkMode ? 'border-gray-700 bg-[#343D49]' : 'border-rose-100 bg-white'
       }`}>
         {previewUrl ? (
           <img src={previewUrl} alt="Превью" className="w-full h-full object-cover" />
@@ -1374,7 +1374,7 @@ const handleSavePurchaseBatch = async (e) => {
 
     const batchInputClass = `w-full border rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#8B2635] ${
     isDarkMode
-      ? 'bg-[#2A2A2A] border-gray-700 text-white'
+      ? 'bg-[#3D4754] border-gray-700 text-white'
       : 'bg-white border-gray-200 text-gray-900'
   }`;
   
@@ -1383,14 +1383,31 @@ const handleSavePurchaseBatch = async (e) => {
   );
 
   return (
-    <div className={`flex flex-col min-h-screen max-w-md mx-auto shadow-2xl font-sans select-none relative transition-colors duration-200 ${
-      isDarkMode ? 'bg-[#121212] text-gray-100' : 'bg-[#FAF8F5] text-gray-900'
+    <div className={`mekha-app flex flex-col min-h-screen max-w-md mx-auto shadow-2xl font-sans select-none relative transition-colors duration-200 ${
+      isDarkMode ? 'mekha-dark bg-[#202630] text-gray-100' : 'bg-[#FAF8F5] text-gray-900'
     }`}>
       
       <style>{`
+  .mekha-dark .bg-white,
+  .mekha-dark .bg-gray-50 { background-color: #343D49 !important; }
+  .mekha-dark .bg-gray-100 { background-color: #3D4754 !important; }
+  .mekha-dark .text-gray-900,
+  .mekha-dark .text-gray-800,
+  .mekha-dark .text-gray-700 { color: #F1F4F8 !important; }
+  .mekha-dark .text-\\[\\#58111A\\],
+  .mekha-dark .text-\\[\\#8B2635\\] { color: #F0A3B0 !important; }
+  .mekha-dark .border-gray-200,
+  .mekha-dark .border-rose-100,
+  .mekha-dark .border-rose-200 { border-color: #596575 !important; }
+  .mekha-dark input,
+  .mekha-dark textarea,
+  .mekha-dark select { color-scheme: dark; }
+  .mekha-dark input::placeholder,
+  .mekha-dark textarea::placeholder { color: #AAB4C2 !important; opacity: 1; }
+
   html, body, #root {
     min-height: 100%;
-    background-color: ${isDarkMode ? '#121212' : '#FAF8F5'};
+    background-color: ${isDarkMode ? '#202630' : '#FAF8F5'};
   }
 
   html, body {
@@ -1548,7 +1565,7 @@ const handleSavePurchaseBatch = async (e) => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className={`p-3.5 rounded-2xl border shadow-sm space-y-1.5 ${
-                  isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+                  isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
                 }`}>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-gray-400">USD / TJS</span>
@@ -1562,7 +1579,7 @@ const handleSavePurchaseBatch = async (e) => {
                 </div>
 
                 <div className={`p-3.5 rounded-2xl border shadow-sm space-y-1.5 ${
-                  isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+                  isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
                 }`}>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-gray-400">CNY / USD</span>
@@ -1600,7 +1617,7 @@ const handleSavePurchaseBatch = async (e) => {
                   setIsAddModalOpen(true);
                 }}
                 className={`p-3.5 rounded-2xl border shadow-sm text-left space-y-1.5 active:scale-95 transition-transform ${
-                  isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+                  isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
                 }`}
               >
                 <div className="w-8 h-8 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center font-bold">
@@ -1615,7 +1632,7 @@ const handleSavePurchaseBatch = async (e) => {
               <button 
                 onClick={() => setIsProfileModalOpen(true)}
                 className={`p-3.5 rounded-2xl border shadow-sm text-left space-y-1.5 active:scale-95 transition-transform ${
-                  isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+                  isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
                 }`}
               >
                 <div className="w-8 h-8 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center font-bold">
@@ -1653,7 +1670,7 @@ const handleSavePurchaseBatch = async (e) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Поиск по названию товара..."
                 className={`w-full pl-9 pr-4 py-2.5 border rounded-2xl text-xs outline-none focus:border-[#58111A] shadow-sm ${
-                  isDarkMode ? 'bg-[#1E1E1E] border-gray-800 text-white' : 'bg-white border-rose-100 text-gray-900'
+                  isDarkMode ? 'bg-[#2B323D] border-gray-700 text-white' : 'bg-white border-rose-100 text-gray-900'
                 }`}
               />
               <Search size={15} className="absolute left-3 top-3 text-gray-400" />
@@ -1678,7 +1695,7 @@ const handleSavePurchaseBatch = async (e) => {
                       key={p.id}
                       className={`flex h-[104px] overflow-hidden rounded-2xl border shadow-sm ${evaporatingProductId === p.id ? 'product-evaporating' : ''} ${
                         isDarkMode
-                          ? 'bg-[#1E1E1E] border-gray-800'
+                          ? 'bg-[#2B323D] border-gray-700'
                           : 'bg-white border-rose-100'
                       } ${
                         editingId === p.id ? 'ring-1 ring-rose-400' : ''
@@ -1756,7 +1773,7 @@ const handleSavePurchaseBatch = async (e) => {
                         <div className="flex items-end justify-between gap-1">
                           <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${
                             isDarkMode
-                              ? 'bg-[#303030] text-gray-300'
+                              ? 'bg-[#485361] text-gray-300'
                               : 'bg-gray-100 text-gray-700'
                           }`}>
                             Остаток: {p.quantity} шт
@@ -1786,13 +1803,13 @@ const handleSavePurchaseBatch = async (e) => {
           <div className="space-y-4">
             
             <div className={`p-3.5 rounded-2xl border shadow-sm flex justify-around text-center ${
-              isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+              isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
             }`}>
               <div>
                 <span className="text-[10px] text-gray-400 block font-medium">1 Юань (¥)</span>
                 <span className="font-bold text-xs text-rose-400">${rates.CNY_USD.toFixed(3)}</span>
               </div>
-              <div className={`border-r ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}></div>
+              <div className={`border-r ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}></div>
               <div>
                 <span className="text-[10px] text-gray-400 block font-medium">1 Доллар ($)</span>
                 <span className="font-bold text-xs text-rose-400">{rates.USD_TJS.toFixed(2)} TJS</span>
@@ -1800,7 +1817,7 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
             <div className={`p-4 rounded-3xl border shadow-sm space-y-3.5 ${
-              isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+              isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
             }`}>
               <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider flex items-center gap-1.5">
                 <Calculator size={15} /> Расчет планируемой закупки
@@ -1816,7 +1833,7 @@ const handleSavePurchaseBatch = async (e) => {
                     onChange={handleNumericInput(setCalcUnitPriceCNY)}
                     placeholder="45"
                     className={`w-full p-2.5 border rounded-xl text-sm font-semibold outline-none focus:border-[#58111A] ${
-                      isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                      isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                     }`}
                   />
                 </div>
@@ -1829,7 +1846,7 @@ const handleSavePurchaseBatch = async (e) => {
                     onChange={handleNumericInput(setCalcQuantity)}
                     placeholder="10"
                     className={`w-full p-2.5 border rounded-xl text-sm font-bold text-center outline-none focus:border-[#58111A] ${
-                      isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                      isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                     }`}
                   />
                 </div>
@@ -1838,7 +1855,7 @@ const handleSavePurchaseBatch = async (e) => {
               <div className="space-y-1">
                 <label className="text-[10px] text-gray-400 font-medium">Стоимость доставки Карго</label>
                 <div className={`flex border rounded-xl overflow-hidden focus-within:border-[#58111A] p-1 gap-1 ${
-                  isDarkMode ? 'bg-[#2A2A2A] border-gray-700' : 'bg-gray-50 border-gray-200'
+                  isDarkMode ? 'bg-[#3D4754] border-gray-700' : 'bg-gray-50 border-gray-200'
                 }`}>
                   <input 
                     type="text" 
@@ -1869,7 +1886,7 @@ const handleSavePurchaseBatch = async (e) => {
             </div>
 
             <div className={`p-4 rounded-3xl border shadow-sm space-y-3 ${
-              isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+              isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
             }`}>
               <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Мгновенный итог расчетов</h3>
 
@@ -1923,7 +1940,7 @@ const handleSavePurchaseBatch = async (e) => {
 
             {/* Форма отправки */}
             <form onSubmit={handleSendOrder} className={`p-4 rounded-3xl border shadow-sm space-y-3.5 ${
-              isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+              isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
             }`}>
               <h3 className="text-xs font-semibold flex items-center gap-1.5">
                 <Truck size={14} className="text-[#58111A]" /> Оформить доставку курьеру
@@ -1931,7 +1948,7 @@ const handleSavePurchaseBatch = async (e) => {
 
               {/* ДОБАВЛЕНИЕ ТОВАРОВ В ЗАКАЗ */}
               <div className={`space-y-2 p-3 rounded-2xl border ${
-                isDarkMode ? 'bg-[#2A2A2A] border-gray-700' : 'bg-rose-50/50 border-rose-200'
+                isDarkMode ? 'bg-[#3D4754] border-gray-700' : 'bg-rose-50/50 border-rose-200'
               }`}>
                 <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Состав заказа (товары):</label>
                 
@@ -1939,7 +1956,7 @@ const handleSavePurchaseBatch = async (e) => {
                   <div className="space-y-1.5 mb-2">
                     {deliveryItems.map((prodItem, idx) => (
                       <div key={idx} className={`flex justify-between items-center p-2 rounded-xl border text-xs ${
-                        isDarkMode ? 'bg-[#1E1E1E] border-gray-700 text-white' : 'bg-white border-rose-100 text-gray-900'
+                        isDarkMode ? 'bg-[#2B323D] border-gray-700 text-white' : 'bg-white border-rose-100 text-gray-900'
                       }`}>
                         <div className="flex items-center gap-2">
                           {prodItem.photo && <img src={prodItem.photo} alt="" className="w-7 h-7 object-cover rounded-md border" />}
@@ -1967,7 +1984,7 @@ const handleSavePurchaseBatch = async (e) => {
                       placeholder="Выберите товар из базы..."
                       className={`w-full pl-8 pr-3 py-2.5 rounded-xl text-xs outline-none border ${
                         isDarkMode 
-                          ? 'bg-[#1E1E1E] border-gray-600 text-white focus:border-rose-400' 
+                          ? 'bg-[#2B323D] border-gray-600 text-white focus:border-rose-400' 
                           : 'bg-white border-rose-200 text-gray-900 focus:border-[#58111A]'
                       }`}
                       style={{ outline: 'none', boxShadow: 'none' }}
@@ -1976,7 +1993,7 @@ const handleSavePurchaseBatch = async (e) => {
 
                     {searchQuery.trim() !== '' && (
                       <div className={`absolute left-0 right-0 top-full mt-1.5 rounded-2xl border shadow-xl z-30 max-h-40 overflow-y-auto ${
-                        isDarkMode ? 'bg-[#1E1E1E] border-gray-700 text-white' : 'bg-white border-rose-200 text-gray-900'
+                        isDarkMode ? 'bg-[#2B323D] border-gray-700 text-white' : 'bg-white border-rose-200 text-gray-900'
                       }`}>
                         {products.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase())).map(p => (
                           <div
@@ -1986,7 +2003,7 @@ const handleSavePurchaseBatch = async (e) => {
                               setSearchQuery(p.title);
                             }}
                             className={`flex items-center gap-2 p-2.5 cursor-pointer border-b last:border-none ${
-                              isDarkMode ? 'hover:bg-[#333] border-gray-800' : 'hover:bg-rose-50 border-gray-100'
+                              isDarkMode ? 'hover:bg-[#333] border-gray-700' : 'hover:bg-rose-50 border-gray-100'
                             }`}
                           >
                             <img src={p.photo} alt="" className="w-7 h-7 object-cover rounded-md border" />
@@ -2008,7 +2025,7 @@ const handleSavePurchaseBatch = async (e) => {
                     placeholder="Кол"
                     className={`w-16 py-2.5 px-2 rounded-xl text-xs font-bold text-center outline-none border ${
                       isDarkMode 
-                        ? 'bg-[#1E1E1E] border-gray-600 text-white focus:border-rose-400' 
+                        ? 'bg-[#2B323D] border-gray-600 text-white focus:border-rose-400' 
                         : 'bg-white border-rose-200 text-gray-900 focus:border-[#58111A]'
                     }`}
                     style={{ outline: 'none', boxShadow: 'none' }}
@@ -2049,7 +2066,7 @@ const handleSavePurchaseBatch = async (e) => {
                   onChange={(e) => setClientAddress(e.target.value)}
                   placeholder="Адрес получателя (например, пр. Рудаки 120)"
                   className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
-                    isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                   }`}
                 />
                 <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
@@ -2062,7 +2079,7 @@ const handleSavePurchaseBatch = async (e) => {
                   onChange={(e) => setClientPhone(e.target.value)}
                   placeholder="Телефон (+992...)"
                   className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
-                    isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                   }`}
                 />
                 <Phone size={15} className="absolute left-3 top-3.5 text-gray-400" />
@@ -2075,7 +2092,7 @@ const handleSavePurchaseBatch = async (e) => {
                   onChange={(e) => setDeliveryComment(e.target.value)}
                   placeholder="Комментарий для курьера (опционально)"
                   className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
-                    isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                   }`}
                 />
                 <MessageSquare size={15} className="absolute left-3 top-3.5 text-gray-400" />
@@ -2098,7 +2115,7 @@ const handleSavePurchaseBatch = async (e) => {
                           className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
                             isSelected 
                               ? 'bg-[#58111A] border-[#58111A] text-white shadow-md' 
-                              : (isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-800')
+                              : (isDarkMode ? 'bg-[#3D4754] border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-800')
                           }`}
                         >
                           <div>
@@ -2131,7 +2148,7 @@ const handleSavePurchaseBatch = async (e) => {
               ) : (
                 deliveries.map(item => (
                   <div key={item.id} className={`p-3.5 rounded-2xl border shadow-sm space-y-2 ${
-                    isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+                    isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
                   }`}>
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
@@ -2158,7 +2175,7 @@ const handleSavePurchaseBatch = async (e) => {
                       </span>
                     </div>
 
-                    <div className="text-[11px] opacity-80 space-y-1 pt-1 border-t border-gray-100 dark:border-gray-800">
+                    <div className="text-[11px] opacity-80 space-y-1 pt-1 border-t border-gray-100 dark:border-gray-700">
                       <p>📍 Адрес: {item.address}</p>
                       <p>📞 Тел: {item.clientPhone}</p>
                       {item.comment && <p>💬 Комментарий: {item.comment}</p>}
@@ -2183,7 +2200,7 @@ const handleSavePurchaseBatch = async (e) => {
         {productToDelete && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
             <div className={`w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center space-y-4 ${
-              isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
+              isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
             }`}>
               <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
                 <Trash2 size={24} />
@@ -2235,18 +2252,18 @@ const handleSavePurchaseBatch = async (e) => {
       {isAddModalOpen && (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-3">
         <div className={`w-full max-w-sm max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl space-y-5 relative animate-scale-up ${
-            isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
+            isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
           }`}>
             <button 
               onClick={() => setIsProfileModalOpen(false)}
               className={`absolute top-3.5 right-3.5 p-1.5 rounded-full ${
-                isDarkMode ? 'bg-[#2A2A2A] text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-500 hover:text-black'
+                isDarkMode ? 'bg-[#3D4754] text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-500 hover:text-black'
               }`}
             >
               <X size={16} />
             </button>
 
-            <div className="flex items-center gap-3 pb-2 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3 pb-2 border-b border-gray-200 dark:border-gray-700">
               <div className="w-12 h-12 rounded-full bg-[#58111A] text-white font-bold flex items-center justify-center text-lg shadow-inner">
                 M
               </div>
@@ -2267,7 +2284,7 @@ const handleSavePurchaseBatch = async (e) => {
                 onChange={(e) => setNewCourierName(e.target.value)}
                 placeholder="Имя курьера (например, Нодир)"
                 className={`w-full p-2.5 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
-                  isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                  isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                 }`}
               />
 
@@ -2278,7 +2295,7 @@ const handleSavePurchaseBatch = async (e) => {
                   onChange={(e) => setNewCourierChatId(e.target.value)}
                   placeholder="Telegram Chat ID (например, 907176273)"
                   className={`w-full pl-7 pr-3 p-2.5 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
-                    isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
                   }`}
                 />
                 <Key size={13} className="absolute left-2.5 top-3 text-gray-400" />
@@ -2294,7 +2311,7 @@ const handleSavePurchaseBatch = async (e) => {
               <div className="max-h-36 overflow-y-auto space-y-1.5">
                 {couriers.map(c => (
                   <div key={c.id} className={`p-2.5 rounded-xl border flex justify-between items-center text-xs ${
-                    isDarkMode ? 'bg-[#252525] border-gray-800' : 'bg-gray-50 border-gray-200'
+                    isDarkMode ? 'bg-[#343D49] border-gray-700' : 'bg-gray-50 border-gray-200'
                   }`}>
                     <div>
                       <span className="font-bold">{c.name}</span>
@@ -2322,7 +2339,7 @@ const handleSavePurchaseBatch = async (e) => {
 
             <button 
               onClick={() => setIsProfileModalOpen(false)}
-              className="w-full bg-gray-200 dark:bg-[#2A2A2A] text-gray-800 dark:text-gray-200 py-2.5 rounded-xl text-xs font-semibold mt-2"
+              className="w-full bg-gray-200 dark:bg-[#3D4754] text-gray-800 dark:text-gray-200 py-2.5 rounded-xl text-xs font-semibold mt-2"
             >
               Закрыть
             </button>
@@ -2334,7 +2351,7 @@ const handleSavePurchaseBatch = async (e) => {
 {isAddModalOpen && (
   <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div className={`w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-5 relative animate-scale-up ${
-      isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
+      isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
     }`}>
 
       <button
@@ -2343,7 +2360,7 @@ const handleSavePurchaseBatch = async (e) => {
         aria-label="Закрыть окно"
         className={`absolute top-3 right-3 p-2 rounded-full ${
           isDarkMode
-            ? 'bg-[#2A2A2A] text-gray-400'
+            ? 'bg-[#3D4754] text-gray-400'
             : 'bg-gray-100 text-gray-500'
         }`}
       >
@@ -2392,7 +2409,7 @@ const handleSavePurchaseBatch = async (e) => {
             placeholder="Например: Свитер белый"
             className={`w-full p-3.5 border rounded-xl text-sm outline-none focus:border-[#8B2635] ${
               isDarkMode
-                ? 'bg-[#2A2A2A] border-gray-700 text-white'
+                ? 'bg-[#3D4754] border-gray-700 text-white'
                 : 'bg-gray-50 border-gray-200 text-gray-900'
             }`}
           />
@@ -2425,15 +2442,15 @@ const handleSavePurchaseBatch = async (e) => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold">Закупка всего (TJS)</label>
-              <input type="number" min="0" step="0.01" value={prodWholesale} onChange={e => setProdWholesale(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+              <input type="number" min="0" step="0.01" value={prodWholesale} onChange={e => setProdWholesale(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold">Карго всего (TJS)</label>
-              <input type="number" min="0" step="0.01" value={prodCargoCost} onChange={e => setProdCargoCost(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+              <input type="number" min="0" step="0.01" value={prodCargoCost} onChange={e => setProdCargoCost(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold">Цена продажи (TJS)</label>
-              <input type="number" min="0" step="0.01" value={prodSalePrice} onChange={e => setProdSalePrice(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
+              <input type="number" min="0" step="0.01" value={prodSalePrice} onChange={e => setProdSalePrice(e.target.value)} className={`w-full p-3 border rounded-xl text-sm ${isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`} />
             </div>
           </div>
         )}
@@ -2442,7 +2459,7 @@ const handleSavePurchaseBatch = async (e) => {
         {!editingId && (
           <div className={`rounded-xl p-3 flex gap-2.5 ${
             isDarkMode
-              ? 'bg-[#252525]'
+              ? 'bg-[#343D49]'
               : 'bg-rose-50'
           }`}>
             <CheckCircle2
@@ -2486,7 +2503,7 @@ const handleSavePurchaseBatch = async (e) => {
       
         {showBatchDraftChoice && (
           <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
-            <div className={`w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-3 ${isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'}`}>
+            <div className={`w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-3 ${isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'}`}>
               <h3 className="text-base font-bold">Найден черновик поставки</h3>
               <p className="text-sm text-gray-500">Можно продолжить с шага {readBatchDraft()?.batchStep || 1} или начать новую поставку.</p>
               <button
@@ -2524,7 +2541,7 @@ const handleSavePurchaseBatch = async (e) => {
                   setShowBatchDraftChoice(false);
                   setIsBatchModalOpen(true);
                 }}
-                className={`w-full py-3 rounded-xl text-sm font-semibold ${isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'}`}
+                className={`w-full py-3 rounded-xl text-sm font-semibold ${isDarkMode ? 'bg-[#485361]' : 'bg-gray-100'}`}
               >
                 Новая поставка
               </button>
@@ -2543,7 +2560,7 @@ const handleSavePurchaseBatch = async (e) => {
         {isBatchModalOpen && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className={`w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl space-y-6 ${
-              isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'
+              isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
             }`}>
 
               {/* Заголовок */}
@@ -2612,7 +2629,7 @@ const handleSavePurchaseBatch = async (e) => {
 
                   <div className={`rounded-xl p-3 text-xs ${
                     isDarkMode
-                      ? 'bg-[#252525] text-gray-400'
+                      ? 'bg-[#343D49] text-gray-400'
                       : 'bg-rose-50 text-gray-500'
                   }`}>
                     Название можно изменить. Оно поможет быстро найти поставку
@@ -2687,7 +2704,7 @@ const handleSavePurchaseBatch = async (e) => {
                     )
                     ? 'border-[#8B2635] bg-rose-50'
                     : isDarkMode
-                      ? 'border-gray-700 bg-[#252525]'
+                      ? 'border-gray-700 bg-[#343D49]'
                       : 'border-gray-200 bg-white'
                 }`}
               >
@@ -2760,7 +2777,7 @@ const handleSavePurchaseBatch = async (e) => {
   <label
     className={`relative flex flex-col items-center justify-center w-full min-h-36 rounded-2xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${
       isDarkMode
-        ? 'border-gray-600 bg-[#252525] hover:border-rose-400'
+        ? 'border-gray-600 bg-[#343D49] hover:border-rose-400'
         : 'border-rose-200 bg-rose-50 hover:border-[#8B2635]'
     }`}
   >
@@ -2847,7 +2864,7 @@ const handleSavePurchaseBatch = async (e) => {
         type="button"
         onClick={() => setBatchStep(1)}
         className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
-          isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
+          isDarkMode ? 'bg-[#485361]' : 'bg-gray-100'
         }`}
       >
         Назад
@@ -2954,7 +2971,7 @@ const handleSavePurchaseBatch = async (e) => {
             key={`${item.productId}-${itemIndex}`}
             className={`rounded-2xl border p-4 space-y-4 ${
               isDarkMode
-                ? 'border-gray-700 bg-[#252525]'
+                ? 'border-gray-700 bg-[#343D49]'
                 : 'border-gray-200 bg-gray-50'
             }`}
           >
@@ -3029,7 +3046,7 @@ const handleSavePurchaseBatch = async (e) => {
                   key={variantIndex}
                   className={`rounded-xl border p-3 mb-3 space-y-3 ${
                     isDarkMode
-                      ? 'border-gray-700 bg-[#1E1E1E]'
+                      ? 'border-gray-700 bg-[#2B323D]'
                       : 'border-gray-200 bg-white'
                   }`}
                 >
@@ -3146,7 +3163,7 @@ const handleSavePurchaseBatch = async (e) => {
           type="button"
           onClick={() => setBatchStep(2)}
           className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
-            isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
+            isDarkMode ? 'bg-[#485361]' : 'bg-gray-100'
           }`}
         >
           Назад
@@ -3219,7 +3236,7 @@ const handleSavePurchaseBatch = async (e) => {
             key={`${item.productId}-${itemIndex}`}
             className={`rounded-2xl border p-4 space-y-5 ${
               isDarkMode
-                ? 'border-gray-700 bg-[#252525]'
+                ? 'border-gray-700 bg-[#343D49]'
                 : 'border-gray-200 bg-gray-50'
             }`}
           >
@@ -3243,7 +3260,7 @@ const handleSavePurchaseBatch = async (e) => {
 
               <div className={`flex items-center border rounded-xl overflow-hidden ${
                 isDarkMode
-                  ? 'border-gray-700 bg-[#2A2A2A]'
+                  ? 'border-gray-700 bg-[#3D4754]'
                   : 'border-gray-200 bg-white'
               }`}>
                 <input
@@ -3289,7 +3306,7 @@ const handleSavePurchaseBatch = async (e) => {
 
               <div className={`flex items-center border rounded-xl overflow-hidden ${
                 isDarkMode
-                  ? 'border-gray-700 bg-[#2A2A2A]'
+                  ? 'border-gray-700 bg-[#3D4754]'
                   : 'border-gray-200 bg-white'
               }`}>
                 <input
@@ -3358,7 +3375,7 @@ const handleSavePurchaseBatch = async (e) => {
             {/* СЕБЕСТОИМОСТЬ */}
             <div className={`rounded-xl p-4 space-y-3 ${
               isDarkMode
-                ? 'bg-[#1E1E1E] border border-gray-700'
+                ? 'bg-[#2B323D] border border-gray-700'
                 : 'bg-rose-50 border border-rose-100'
             }`}>
               <div>
@@ -3401,7 +3418,7 @@ const handleSavePurchaseBatch = async (e) => {
       {/* ОБЩАЯ СУММА */}
       <div className={`rounded-2xl p-4 ${
         isDarkMode
-          ? 'bg-[#303030]'
+          ? 'bg-[#485361]'
           : 'bg-gray-100'
       }`}>
         <p className="text-xs text-gray-500">
@@ -3419,7 +3436,7 @@ const handleSavePurchaseBatch = async (e) => {
           type="button"
           onClick={() => setBatchStep(3)}
           className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
-            isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
+            isDarkMode ? 'bg-[#485361]' : 'bg-gray-100'
           }`}
         >
           Назад
@@ -3511,7 +3528,7 @@ const handleSavePurchaseBatch = async (e) => {
 
       {/* НАЗВАНИЕ ПОСТАВКИ */}
       <div className={`rounded-xl p-3 ${
-        isDarkMode ? 'bg-[#252525]' : 'bg-gray-50'
+        isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'
       }`}>
         <p className="text-[11px] text-gray-400">
           Название поставки
@@ -3546,7 +3563,7 @@ const handleSavePurchaseBatch = async (e) => {
               key={`${item.productId}-${itemIndex}`}
               className={`rounded-xl border p-3 space-y-3 ${
                 isDarkMode
-                  ? 'border-gray-700 bg-[#252525]'
+                  ? 'border-gray-700 bg-[#343D49]'
                   : 'border-gray-200 bg-gray-50'
               }`}
             >
@@ -3580,7 +3597,7 @@ const handleSavePurchaseBatch = async (e) => {
                   <div
                     key={index}
                     className={`flex justify-between items-center rounded-lg p-2 text-xs ${
-                      isDarkMode ? 'bg-[#1E1E1E]' : 'bg-white'
+                      isDarkMode ? 'bg-[#2B323D]' : 'bg-white'
                     }`}
                   >
                     <span>
@@ -3656,7 +3673,7 @@ const handleSavePurchaseBatch = async (e) => {
       {/* ОБЩИЙ ИТОГ */}
       <div className={`rounded-2xl p-4 space-y-3 ${
         isDarkMode
-          ? 'bg-[#252525] border border-gray-700'
+          ? 'bg-[#343D49] border border-gray-700'
           : 'bg-rose-50 border border-rose-100'
       }`}>
         <p className="text-xs text-gray-500">
@@ -3704,7 +3721,7 @@ const handleSavePurchaseBatch = async (e) => {
           disabled={batchSaving}
           onClick={() => setBatchStep(4)}
           className={`flex-1 py-3 rounded-xl text-sm font-semibold ${
-            isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'
+            isDarkMode ? 'bg-[#485361]' : 'bg-gray-100'
           }`}
         >
           Назад
@@ -3740,7 +3757,7 @@ const handleSavePurchaseBatch = async (e) => {
 
       {isSupportOpen && (
         <div className="fixed inset-0 z-[80] bg-black/60 flex items-end sm:items-center justify-center p-3">
-          <div className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[82vh] ${isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'}`}>
+          <div className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[82vh] ${isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'}`}>
             <div className="bg-[#58111A] text-white px-4 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
@@ -3756,12 +3773,12 @@ const handleSavePurchaseBatch = async (e) => {
               </button>
             </div>
             <div className="p-4 overflow-y-auto flex-1 min-h-[220px] space-y-3">
-              <div className={`rounded-2xl rounded-tl-sm p-3 text-sm max-w-[90%] ${isDarkMode ? 'bg-[#303030]' : 'bg-rose-50'}`}>
+              <div className={`rounded-2xl rounded-tl-sm p-3 text-sm max-w-[90%] ${isDarkMode ? 'bg-[#485361]' : 'bg-rose-50'}`}>
                 Здравствуйте! Опишите ваш вопрос. Сообщение поступит в службу поддержки Mekha Shop.
               </div>
               {supportHistory.map((item) => (
                 <div key={item.id} className={`flex ${item.sender === 'client' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[90%] rounded-2xl p-3 text-sm break-words ${item.sender === 'client' ? 'rounded-tr-sm bg-[#58111A] text-white' : (isDarkMode ? 'rounded-tl-sm bg-[#303030] text-white' : 'rounded-tl-sm bg-rose-50 text-gray-900')}`}>
+                  <div className={`max-w-[90%] rounded-2xl p-3 text-sm break-words ${item.sender === 'client' ? 'rounded-tr-sm bg-[#58111A] text-white' : (isDarkMode ? 'rounded-tl-sm bg-[#485361] text-white' : 'rounded-tl-sm bg-rose-50 text-gray-900')}`}>
                     {item.text}
                     <p className={`text-[10px] mt-1 ${item.sender === 'client' ? 'text-rose-200' : 'text-gray-400'}`}>
                       {item.sender === 'client' ? 'Вы' : 'Служба поддержки'}
@@ -3800,7 +3817,7 @@ const handleSavePurchaseBatch = async (e) => {
                 placeholder="Напишите сообщение..."
                 rows={2}
                 maxLength={2000}
-                className={`flex-1 resize-none rounded-2xl px-3 py-2.5 text-sm outline-none border ${isDarkMode ? 'bg-[#2A2A2A] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                className={`flex-1 resize-none rounded-2xl px-3 py-2.5 text-sm outline-none border ${isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
               />
               <button
                 type="submit"
@@ -3817,7 +3834,7 @@ const handleSavePurchaseBatch = async (e) => {
 
       {/* Нижняя навигация */}
       <nav className={`flex justify-around items-center border-t h-20 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20 shadow-lg px-2 transition-colors ${
-        isDarkMode ? 'bg-[#1E1E1E] border-gray-800' : 'bg-white border-rose-100'
+        isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
       }`}>
         <button 
           onClick={() => setActiveTab('home')} 
