@@ -545,8 +545,20 @@ useEffect(() => {
       const raw = localStorage.getItem(BATCH_DRAFT_KEY);
       if (!raw) return null;
       const draft = JSON.parse(raw);
-      return draft && Array.isArray(draft.batchItems) && draft.batchItems.length
-        ? draft
+      if (!draft || !Array.isArray(draft.batchItems)) return null;
+
+      // Удаляем пустые позиции, оставшиеся от старой версии формы,
+      // и не восстанавливаем одну модель дважды.
+      const seenProductIds = new Set();
+      const cleanItems = draft.batchItems.filter(item => {
+        const productId = String(item?.productId || '').trim();
+        if (!productId || seenProductIds.has(productId)) return false;
+        seenProductIds.add(productId);
+        return true;
+      });
+
+      return cleanItems.length
+        ? { ...draft, batchItems: cleanItems }
         : null;
     } catch {
       return null;
