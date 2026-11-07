@@ -554,7 +554,6 @@ useEffect(() => {
   };
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [showBatchDraftChoice, setShowBatchDraftChoice] = useState(false);
-  const [batchDraftAvailable] = useState(() => Boolean(readBatchDraft()));
   const [batchNotes, setBatchNotes] = useState(() => readBatchDraft()?.batchNotes || '');
   const [batchItems, setBatchItems] = useState(() => readBatchDraft()?.batchItems || []);
   const [batchSaving, setBatchSaving] = useState(false);
@@ -1029,11 +1028,19 @@ const handleSavePurchaseBatch = async (e) => {
       }
     );
 
-    const data = await response.json();
+    const responseText = await response.text();
+    let data = {};
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      throw new Error(
+        `Сервер вернул некорректный ответ (HTTP ${response.status}). Проверьте размер фотографии и повторите попытку.`
+      );
+    }
 
     if (!response.ok || !data.success) {
       throw new Error(
-        data.error || 'Не удалось сохранить партию'
+        data.error || `Не удалось сохранить партию (HTTP ${response.status})`
       );
     }
     await loadProducts();
@@ -1052,9 +1059,10 @@ const handleSavePurchaseBatch = async (e) => {
     });
 
   } catch (error) {
+    console.error('Purchase batch save failed:', error);
     setModalAlert({
-      title: 'Ошибка сохранения',
-      message: error.message || 'Не удалось связаться с сервером.',
+      title: 'Поставка не сохранена',
+      message: error.message || 'Не удалось связаться с сервером. Черновик сохранён — можно повторить попытку.',
       type: 'error'
     });
   } finally {
