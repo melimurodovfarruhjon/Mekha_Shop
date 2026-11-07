@@ -539,18 +539,56 @@ useEffect(() => {
 
   
   // ФОРМА НОВОЙ ЗАКУПОЧНОЙ ПАРТИИ
+  const BATCH_DRAFT_KEY = 'mekha_purchase_batch_draft_v1';
+  const readBatchDraft = () => {
+    try {
+      const raw = localStorage.getItem(BATCH_DRAFT_KEY);
+      if (!raw) return null;
+      const draft = JSON.parse(raw);
+      return draft && Array.isArray(draft.batchItems) && draft.batchItems.length
+        ? draft
+        : null;
+    } catch {
+      return null;
+    }
+  };
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
- const [batchNotes, setBatchNotes] = useState('');
- const [batchItems, setBatchItems] = useState([]);
- const [batchSaving, setBatchSaving] = useState(false);
+  const [showBatchDraftChoice, setShowBatchDraftChoice] = useState(false);
+  const [batchDraftAvailable] = useState(() => Boolean(readBatchDraft()));
+  const [batchNotes, setBatchNotes] = useState(() => readBatchDraft()?.batchNotes || '');
+  const [batchItems, setBatchItems] = useState(() => readBatchDraft()?.batchItems || []);
+  const [batchSaving, setBatchSaving] = useState(false);
 
   // ПОШАГОВОЕ ОФОРМЛЕНИЕ ПОСТАВКИ
-  const [batchStep, setBatchStep] = useState(1);
-  const [batchName, setBatchName] = useState('');
+  const [batchStep, setBatchStep] = useState(() => readBatchDraft()?.batchStep || 1);
+  const [batchName, setBatchName] = useState(() => readBatchDraft()?.batchName || '');
   const [showBatchVariants, setShowBatchVariants] = useState(false);
   const [batchNewProductTitle, setBatchNewProductTitle] = useState('');
   const [batchNewProductPhoto, setBatchNewProductPhoto] = useState('');
   const [showBatchProductCreation, setShowBatchProductCreation] = useState(false);
+
+  // Автоматически сохраняем незавершённую поставку в браузере.
+  useEffect(() => {
+    if (batchItems.length === 0 || !batchName) return;
+    try {
+      localStorage.setItem(BATCH_DRAFT_KEY, JSON.stringify({
+        batchItems,
+        batchNotes,
+        batchName,
+        batchStep,
+        batchNewProductTitle,
+        batchNewProductPhoto,
+        showBatchProductCreation
+      }));
+    } catch (error) {
+      console.error('Не удалось сохранить черновик поставки:', error);
+      setModalAlert({
+        title: 'Не удалось сохранить черновик',
+        message: 'В браузере недостаточно места. Уменьшите размер фотографии товара и повторите попытку.',
+        type: 'error'
+      });
+    }
+  }, [batchItems, batchNotes, batchName, batchStep, batchNewProductTitle, batchNewProductPhoto, showBatchProductCreation]);
 
   const createEmptyBatchItem = () => ({
     productId: '',
@@ -999,6 +1037,7 @@ const handleSavePurchaseBatch = async (e) => {
       );
     }
     await loadProducts();
+    localStorage.removeItem(BATCH_DRAFT_KEY);
     setBatchItems([]);
     setBatchNotes('');
     setBatchName('');
@@ -2387,6 +2426,61 @@ const handleSavePurchaseBatch = async (e) => {
 )}
 
       
+        {showBatchDraftChoice && (
+          <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
+            <div className={`w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-3 ${isDarkMode ? 'bg-[#1E1E1E] text-white' : 'bg-white text-gray-900'}`}>
+              <h3 className="text-base font-bold">Найден черновик поставки</h3>
+              <p className="text-sm text-gray-500">Можно продолжить с шага {readBatchDraft()?.batchStep || 1} или начать новую поставку.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  const draft = readBatchDraft();
+                  if (draft) {
+                    setBatchItems(draft.batchItems || []);
+                    setBatchNotes(draft.batchNotes || '');
+                    setBatchName(draft.batchName || '');
+                    setBatchStep(draft.batchStep || 1);
+                    setBatchNewProductTitle(draft.batchNewProductTitle || '');
+                    setBatchNewProductPhoto(draft.batchNewProductPhoto || '');
+                    setShowBatchProductCreation(Boolean(draft.showBatchProductCreation));
+                  }
+                  setShowBatchDraftChoice(false);
+                  setIsBatchModalOpen(true);
+                }}
+                className="w-full bg-[#58111A] text-white py-3 rounded-xl text-sm font-bold"
+              >
+                Продолжить черновик
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem(BATCH_DRAFT_KEY);
+                  setBatchItems([]);
+                  setBatchNotes('');
+                  setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
+                  setBatchNewProductTitle('');
+                  setBatchNewProductPhoto('');
+                  setBatchStep(1);
+                  setShowBatchVariants(false);
+                  setShowBatchProductCreation(false);
+                  setShowBatchDraftChoice(false);
+                  setIsBatchModalOpen(true);
+                }}
+                className={`w-full py-3 rounded-xl text-sm font-semibold ${isDarkMode ? 'bg-[#303030]' : 'bg-gray-100'}`}
+              >
+                Новая поставка
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowBatchDraftChoice(false)}
+                className="w-full py-2 text-xs text-gray-400"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* МОДАЛЬНОЕ ОКНО ПОШАГОВОЙ ПОСТАВКИ */}
         {isBatchModalOpen && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -3690,12 +3784,19 @@ const handleSavePurchaseBatch = async (e) => {
             type="button"
               onClick={() => {
                 setIsQuickAddMenuOpen(false);
+                const savedDraft = readBatchDraft();
+                if (savedDraft) {
+                  setShowBatchDraftChoice(true);
+                  return;
+                }
                 setBatchItems([]);
                 setBatchNotes('');
                 setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
                 setBatchNewProductTitle('');
+                setBatchNewProductPhoto('');
                 setBatchStep(1);
                 setShowBatchVariants(false);
+                setShowBatchProductCreation(false);
                 setIsBatchModalOpen(true);
               }}
             className={`w-16 h-16 rounded-full bg-[#58111A] text-white flex items-center justify-center shadow-xl border-4 active:scale-95 transition-transform ${
