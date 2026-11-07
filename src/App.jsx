@@ -195,6 +195,7 @@ const handleTouchCancel = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [evaporatingProductId, setEvaporatingProductId] = useState(null);
   const [deleteConfirmationStep, setDeleteConfirmationStep] = useState(1);
   
   // Кастомное уведомление
@@ -1118,6 +1119,9 @@ const handleSavePurchaseBatch = async (e) => {
   const productId = productToDelete.id;
 
   try {
+    setEvaporatingProductId(productId);
+    await new Promise(resolve => setTimeout(resolve, 900));
+
     const response = await fetch(
       `${BACKEND_URL}/api/products/${encodeURIComponent(productId)}`,
       {
@@ -1139,6 +1143,7 @@ const handleSavePurchaseBatch = async (e) => {
 
     setProductToDelete(null);
     setDeleteConfirmationStep(1);
+    setEvaporatingProductId(null);
 
     setModalAlert({
       title: 'Товар удалён',
@@ -1150,6 +1155,7 @@ const handleSavePurchaseBatch = async (e) => {
     console.error('Ошибка удаления товара:', error);
 
     setProductToDelete(null);
+    setEvaporatingProductId(null);
 
     setModalAlert({
       title: 'Ошибка удаления',
@@ -1242,6 +1248,45 @@ const handleSavePurchaseBatch = async (e) => {
   html, body {
     margin: 0;
     overscroll-behavior-y: none;
+  }
+
+  @keyframes product-evaporate {
+    0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    35% { opacity: .8; transform: translateY(-8px) scale(.98); filter: blur(1px); }
+    100% { opacity: 0; transform: translateY(-34px) scale(.88); filter: blur(9px); }
+  }
+
+  @keyframes product-smoke {
+    0% { opacity: 0; transform: translateY(12px) scale(.55); }
+    25% { opacity: .55; }
+    100% { opacity: 0; transform: translateY(-65px) scale(1.65); }
+  }
+
+  .product-evaporating {
+    position: relative;
+    animation: product-evaporate 900ms ease-in forwards;
+    pointer-events: none;
+  }
+
+  .product-smoke-cloud {
+    position: absolute;
+    z-index: 5;
+    left: 18%;
+    bottom: 4px;
+    width: 64%;
+    height: 72px;
+    pointer-events: none;
+    border-radius: 50%;
+    background:
+      radial-gradient(ellipse at 30% 65%, rgba(180,180,180,.42) 0 16%, transparent 42%),
+      radial-gradient(ellipse at 55% 45%, rgba(210,210,210,.48) 0 20%, transparent 48%),
+      radial-gradient(ellipse at 72% 68%, rgba(155,155,155,.35) 0 15%, transparent 43%);
+    filter: blur(8px);
+    animation: product-smoke 900ms ease-out forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product-evaporating, .product-smoke-cloud { animation-duration: 1ms; }
   }
 
   input::-webkit-outer-spin-button,
@@ -1469,7 +1514,7 @@ const handleSavePurchaseBatch = async (e) => {
                   return (
                     <article
                       key={p.id}
-                      className={`flex h-[104px] overflow-hidden rounded-2xl border shadow-sm ${
+                      className={`flex h-[104px] overflow-hidden rounded-2xl border shadow-sm ${evaporatingProductId === p.id ? 'product-evaporating' : ''} ${
                         isDarkMode
                           ? 'bg-[#1E1E1E] border-gray-800'
                           : 'bg-white border-rose-100'
@@ -1477,6 +1522,9 @@ const handleSavePurchaseBatch = async (e) => {
                         editingId === p.id ? 'ring-1 ring-rose-400' : ''
                       }`}
                     >
+                      {evaporatingProductId === p.id && (
+                        <span className="product-smoke-cloud" aria-hidden="true" />
+                      )}
                       <button
                         type="button"
                         onClick={() => setSelectedProductDetails(p)}
