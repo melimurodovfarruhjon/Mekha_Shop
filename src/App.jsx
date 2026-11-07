@@ -195,6 +195,7 @@ const handleTouchCancel = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [deleteConfirmationStep, setDeleteConfirmationStep] = useState(1);
   
   // Кастомное уведомление
   const [modalAlert, setModalAlert] = useState(null);
@@ -1137,6 +1138,7 @@ const handleSavePurchaseBatch = async (e) => {
     }
 
     setProductToDelete(null);
+    setDeleteConfirmationStep(1);
 
     setModalAlert({
       title: 'Товар удалён',
@@ -1509,7 +1511,10 @@ const handleSavePurchaseBatch = async (e) => {
                             </button>
             
                             <button
-                              onClick={() => setProductToDelete(p)}
+                              onClick={() => {
+                                setProductToDelete(p);
+                                setDeleteConfirmationStep(1);
+                              }}
                               aria-label="Удалить"
                               className="p-1 text-gray-400"
                             >
@@ -1975,9 +1980,13 @@ const handleSavePurchaseBatch = async (e) => {
               </div>
 
               <div>
-                <h3 className="text-sm font-bold">Удалить модель?</h3>
+                <h3 className="text-sm font-bold">
+                  {deleteConfirmationStep === 1 ? 'Первое подтверждение' : 'Подтвердите удаление ещё раз'}
+                </h3>
                 <p className="text-xs text-gray-400 mt-2">
-                  Вы действительно хотите удалить «{productToDelete.title}» из каталога?
+                  {deleteConfirmationStep === 1
+                    ? `Вы собираетесь удалить «${productToDelete.title}». Для продолжения потребуется ещё одно подтверждение.`
+                    : `Последнее предупреждение: товар «${productToDelete.title}» будет удалён из каталога. Продолжить?`}
                 </p>
                 <p className="text-[10px] text-gray-400 mt-2">
                   Товар с остатком на складе удалить нельзя.
@@ -1986,15 +1995,24 @@ const handleSavePurchaseBatch = async (e) => {
 
               <button
                 type="button"
-                onClick={confirmDeleteProduct}
+                onClick={() => {
+                  if (deleteConfirmationStep === 1) {
+                    setDeleteConfirmationStep(2);
+                  } else {
+                    confirmDeleteProduct();
+                  }
+                }}
                 className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-bold"
               >
-                Да, удалить
+                {deleteConfirmationStep === 1 ? 'Продолжить' : 'Да, окончательно удалить'}
               </button>
 
               <button
                 type="button"
-                onClick={() => setProductToDelete(null)}
+                onClick={() => {
+                  setProductToDelete(null);
+                  setDeleteConfirmationStep(1);
+                }}
                 className="w-full py-2 text-xs text-gray-400 font-semibold"
               >
                 Отмена
