@@ -986,7 +986,7 @@ const handleSavePurchaseBatch = async (e) => {
     }
 
     payloadItems.push({
-      legacyId: String(product.id),
+      legacyId: String(item.productId),
       title: product.title,
       photo: product.photo,
       quantity,
