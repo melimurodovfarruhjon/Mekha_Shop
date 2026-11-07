@@ -1649,34 +1649,32 @@ const handleSavePurchaseBatch = async (e) => {
           <div className="space-y-4">
             
             {/* ФИНАНСОВАЯ СВОДКА И СКЛАД */}
-            <div className={`rounded-2xl border p-3 shadow-sm space-y-3 ${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}`}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Сводка за сегодня</h3>
-                <span className="text-[9px] text-gray-400">Обновление 30 сек.</span>
-              </div>
+            <div className="bg-gradient-to-br from-[#58111A] to-[#3d0b12] text-white p-5 rounded-3xl shadow-md space-y-3 relative overflow-hidden">
+              <div className="absolute right-[-10px] bottom-[-20px] opacity-10 text-8xl font-bold">M</div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-white">Сегодняшний итог</h3>
               <div className="grid grid-cols-2 gap-2">
-                <div className={`rounded-xl p-2.5 ${isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50/70'}`}>
-                  <p className="text-[10px] text-gray-400">Выручка</p>
-                  <p className="text-base font-extrabold mt-0.5">{Number(dashboardSummary?.revenueTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
+                <div className={`rounded-xl p-2.5 ${bg-white/10}`}>
+                  <p className="text-[10px] text-rose-200">Выручка</p>
+                  <p className="text-base font-extrabold mt-0.5">{Number(dashboardSummary?.revenueTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-rose-200">TJS</span></p>
                 </div>
-                <div className={`rounded-xl p-2.5 ${isDarkMode ? 'bg-[#343D49]' : 'bg-emerald-50/70'}`}>
-                  <p className="text-[10px] text-gray-400">Чистая прибыль*</p>
-                  <p className={`text-base font-extrabold mt-0.5 ${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-gray-400">TJS</span></p>
+                <div className={`rounded-xl p-2.5 ${bg-white/10}`}>
+                  <p className="text-[10px] text-rose-200">Чистая прибыль*</p>
+                  <p className={`text-base font-extrabold mt-0.5 ${Number(dashboardSummary?.profitTjs || 0) >= 0 ? 'text-emerald-300' : 'text-rose-200'}`}>{Number(dashboardSummary?.profitTjs || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} <span className="text-[10px] text-rose-200">TJS</span></p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div><p className="text-sm font-bold">{dashboardSummary?.deliveredToday ?? '—'}</p><p className="text-[9px] text-gray-400">Доставлено</p></div>
-                <div><p className="text-sm font-bold">{dashboardSummary?.pendingOrders ?? '—'}</p><p className="text-[9px] text-gray-400">В пути</p></div>
-                <div><p className="text-sm font-bold">{dashboardSummary?.unitsSold ?? '—'}</p><p className="text-[9px] text-gray-400">Продано шт.</p></div>
+                <div><p className="text-sm font-bold">{dashboardSummary?.deliveredToday ?? '—'}</p><p className="text-[9px] text-rose-200">Доставлено</p></div>
+                <div><p className="text-sm font-bold">{dashboardSummary?.pendingOrders ?? '—'}</p><p className="text-[9px] text-rose-200">В пути</p></div>
+                <div><p className="text-sm font-bold">{dashboardSummary?.unitsSold ?? '—'}</p><p className="text-[9px] text-rose-200">Продано шт.</p></div>
               </div>
-              <div className="border-t border-gray-200/15 pt-2 flex items-center justify-between gap-2">
-                <div><p className="text-[10px] font-semibold">Склад</p><p className="text-[9px] text-gray-400">Товаров с остатком: {dashboardSummary?.productsInStock ?? '—'}</p></div>
+              <div className="border-t border-white/20 pt-2 flex items-center justify-between gap-2">
+                <div><p className="text-[10px] font-semibold">Склад</p><p className="text-[9px] text-rose-200">Товаров с остатком: {dashboardSummary?.productsInStock ?? '—'}</p></div>
                 <div className="flex gap-2 text-[9px] font-semibold">
                   <span className="text-amber-600">Мало: {dashboardSummary?.lowStockProducts ?? '—'}</span>
-                  <span className="text-rose-600">Нет: {dashboardSummary?.outOfStockProducts ?? '—'}</span>
+                  <span className="text-rose-200">Нет: {dashboardSummary?.outOfStockProducts ?? '—'}</span>
                 </div>
               </div>
-              <p className="text-[9px] text-gray-400">*Прибыль рассчитана по подтверждённым продажам и сохранённой себестоимости.</p>
+              <p className="text-[9px] text-rose-200">*Прибыль рассчитана по подтверждённым продажам и сохранённой себестоимости.</p>
             </div>
 
             {/* УВЕДОМЛЕНИЯ О ДОСТАВКЕ */}
