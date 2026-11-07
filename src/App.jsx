@@ -206,6 +206,54 @@ const handleTouchCancel = () => {
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSending, setSupportSending] = useState(false);
   const [supportHistory, setSupportHistory] = useState([]);
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0);
+  const [supportClientId] = useState(() => {
+    const key = 'mekha_support_client_id';
+    let id = localStorage.getItem(key);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(key, id);
+    }
+    return id;
+  });
+
+  // Синхронизация истории поддержки и счётчика непрочитанных ответов
+  useEffect(() => {
+    let active = true;
+    const loadSupportMessages = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/support-messages?clientId=${encodeURIComponent(supportClientId)}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active) return;
+        const messages = Array.isArray(data.messages) ? data.messages : [];
+        setSupportHistory(messages.map(item => ({
+          id: item.id,
+          sender: item.sender,
+          text: item.message,
+          isRead: item.is_read
+        })));
+        const unread = messages.filter(item => item.sender === 'support' && !item.is_read).length;
+        setSupportUnreadCount(unread);
+        if (isSupportOpen && unread > 0) {
+          await fetch(`${BACKEND_URL}/api/support-read`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientId: supportClientId })
+          });
+          if (active) setSupportUnreadCount(0);
+        }
+      } catch (error) {
+        console.error('Support sync failed:', error);
+      }
+    };
+    loadSupportMessages();
+    const timer = setInterval(loadSupportMessages, 3000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [supportClientId, isSupportOpen]);
 
   // СПИСОК КУРЬЕРОВ
   const [couriers, setCouriers] = useState(() => {
@@ -1337,6 +1385,11 @@ const handleSavePurchaseBatch = async (e) => {
             aria-label="Открыть службу поддержки"
           >
             <MessageSquare size={17} />
+            {supportUnreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse ring-2 ring-[#58111A]">
+                {supportUnreadCount > 9 ? '9+' : supportUnreadCount}
+              </span>
+            )}
           </button>
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
@@ -3517,11 +3570,13 @@ const handleSavePurchaseBatch = async (e) => {
               <div className={`rounded-2xl rounded-tl-sm p-3 text-sm max-w-[90%] ${isDarkMode ? 'bg-[#303030]' : 'bg-rose-50'}`}>
                 Здравствуйте! Опишите ваш вопрос. Сообщение поступит в службу поддержки Mekha Shop.
               </div>
-              {supportHistory.map((item, index) => (
-                <div key={index} className="flex justify-end">
-                  <div className="max-w-[90%] rounded-2xl rounded-tr-sm bg-[#58111A] text-white p-3 text-sm break-words">
+              {supportHistory.map((item) => (
+                <div key={item.id} className={`flex ${item.sender === 'client' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[90%] rounded-2xl p-3 text-sm break-words ${item.sender === 'client' ? 'rounded-tr-sm bg-[#58111A] text-white' : (isDarkMode ? 'rounded-tl-sm bg-[#303030] text-white' : 'rounded-tl-sm bg-rose-50 text-gray-900')}`}>
                     {item.text}
-                    <p className="text-[10px] text-rose-200 mt-1">{item.status}</p>
+                    <p className={`text-[10px] mt-1 ${item.sender === 'client' ? 'text-rose-200' : 'text-gray-400'}`}>
+                      {item.sender === 'client' ? 'Вы' : 'Служба поддержки'}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -3537,14 +3592,14 @@ const handleSavePurchaseBatch = async (e) => {
                   const response = await fetch(`${BACKEND_URL}/api/support-message`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
+                    body: JSON.stringify({ message: text, clientId: supportClientId })
                   });
                   const result = await response.json().catch(() => ({}));
                   if (!response.ok) throw new Error(result.error || 'Не удалось отправить сообщение');
-                  setSupportHistory(prev => [...prev, { text, status: 'Отправлено' }]);
+                  setSupportMessage('');
                   setSupportMessage('');
                 } catch (error) {
-                  setSupportHistory(prev => [...prev, { text, status: 'Ошибка отправки. Попробуйте ещё раз.' }]);
+                  setModalAlert({ title: 'Ошибка отправки', message: error.message || 'Попробуйте ещё раз.', type: 'error' });
                 } finally {
                   setSupportSending(false);
                 }
