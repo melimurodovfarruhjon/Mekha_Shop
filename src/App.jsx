@@ -3509,7 +3509,7 @@ const handleSavePurchaseBatch = async (e) => {
         </button>
 
         {/* ЦЕНТРАЛЬНАЯ КНОПКА + */}
-        <div className="flex-1 flex justify-center -mt-6">
+        <div className="flex-1 flex justify-center -mt-8">
           <button
             type="button"
               onClick={() => {
@@ -3522,11 +3522,11 @@ const handleSavePurchaseBatch = async (e) => {
                 setShowBatchVariants(false);
                 setIsBatchModalOpen(true);
               }}
-            className={`w-12 h-12 rounded-full bg-[#58111A] text-white flex items-center justify-center shadow-lg border-4 active:scale-95 transition-transform ${
+            className={`w-16 h-16 rounded-full bg-[#58111A] text-white flex items-center justify-center shadow-xl border-4 active:scale-95 transition-transform ${
               isDarkMode ? 'border-[#121212]' : 'border-[#FAF8F5]'
             }`}
           >
-            {isQuickAddMenuOpen ? <X size={40} /> : <Plus size={30} />}
+            {isQuickAddMenuOpen ? <X size={44} /> : <Plus size={36} />}
           </button>
         </div>
 
