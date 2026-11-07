@@ -3673,7 +3673,7 @@ const handleSavePurchaseBatch = async (e) => {
             type="button"
               onClick={() => {
                 setIsQuickAddMenuOpen(false);
-                setBatchItems([createEmptyBatchItem()]);
+                setBatchItems([]);
                 setBatchNotes('');
                 setBatchName(`Поставка от ${new Date().toLocaleDateString('ru-RU')}`);
                 setBatchNewProductTitle('');
