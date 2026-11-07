@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2, FileText, Share2 } from 'lucide-react';
+import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as ImageIcon, Upload, Edit3, Check, X, Eye, AlertTriangle, Plus, Search, Truck, Moon, Sun, TrendingUp, TrendingDown, Wallet, User, Phone, Send as TelegramIcon, Key, MapPin, Clock, MessageSquare, CheckCircle2, FileText, Share2, Bell, PackageCheck } from 'lucide-react';
 
 // --- КОНФИГУРАЦИЯ БОТА И СЕРВЕРА ---
 const BACKEND_URL = "https://mekhaserver-production.up.railway.app"; // Ваша ссылка с Render
@@ -182,13 +182,10 @@ const handleTouchCancel = () => {
   localStorage.setItem('mekha_active_tab', activeTab);
 }, [activeTab]);
   
-  const [rates, setRates] = useState({ 
-    CNY_USD: 0.14, 
-    USD_TJS: 10.9, 
-    USD_change: +0.45, 
-    CNY_change: -0.12  
-  });
+  const [rates, setRates] = useState({ CNY_USD: 0.14, USD_TJS: 10.9, USD_change: null, CNY_change: null, sourceUpdatedAt: null, checkedAt: null });
   const [loading, setLoading] = useState(false);
+  const [deliveryNotifications, setDeliveryNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
 
   // Тема
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -675,19 +672,37 @@ useEffect(() => {
     setLoading(true);
     try {
       const res = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (!res.ok) throw new Error('Не удалось получить курсы валют');
       const data = await res.json();
-      if (data && data.rates) {
-        setRates({
-          CNY_USD: 1 / (data.rates.CNY || 7.2),
-          USD_TJS: data.rates.TJS || 10.9,
-          USD_change: +0.25,
-          CNY_change: -0.15,
-        });
+      if (data?.rates && Number(data.rates.CNY) > 0 && Number(data.rates.TJS) > 0) {
+        const usdTjs = Number(data.rates.TJS);
+        const cnyUsd = 1 / Number(data.rates.CNY);
+        setRates(previous => ({
+          CNY_USD: cnyUsd,
+          USD_TJS: usdTjs,
+          USD_change: previous.checkedAt ? ((usdTjs - previous.USD_TJS) / previous.USD_TJS) * 100 : null,
+          CNY_change: previous.checkedAt ? ((cnyUsd - previous.CNY_USD) / previous.CNY_USD) * 100 : null,
+          sourceUpdatedAt: data.time_last_update_utc || null,
+          checkedAt: new Date().toISOString()
+        }));
       }
     } catch (err) {
       console.error('Ошибка курса:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDeliveryNotifications = async () => {
+    try {
+      const response = await fetch(\`\${BACKEND_URL}/api/delivery-notifications?limit=15\`);
+      if (!response.ok) throw new Error('Не удалось загрузить уведомления');
+      const data = await response.json();
+      if (data.success && Array.isArray(data.notifications)) setDeliveryNotifications(data.notifications);
+    } catch (error) {
+      console.error('Delivery notifications load failed:', error);
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -703,6 +718,14 @@ useEffect(() => {
 
   useEffect(() => {
     fetchRates();
+    const rateInterval = window.setInterval(fetchRates, 5 * 60 * 1000);
+    return () => window.clearInterval(rateInterval);
+  }, []);
+
+  useEffect(() => {
+    fetchDeliveryNotifications();
+    const notificationInterval = window.setInterval(fetchDeliveryNotifications, 15 * 1000);
+    return () => window.clearInterval(notificationInterval);
   }, []);
 
   const handleNumericInput = (setter) => (e) => {
@@ -1596,6 +1619,44 @@ const handleSavePurchaseBatch = async (e) => {
               </div>
             </div>
 
+            {/* УВЕДОМЛЕНИЯ О ДОСТАВКЕ */}
+            <div className={\`rounded-2xl border shadow-sm overflow-hidden \${isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'}\`}>
+              <div className="flex items-center justify-between px-3.5 py-3 border-b border-gray-200/15">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-rose-100 text-[#58111A] flex items-center justify-center"><Bell size={16} /></div>
+                  <div><h3 className="text-xs font-bold">Уведомления о доставке</h3><p className="text-[10px] text-gray-400">Подтверждения курьеров из Telegram</p></div>
+                </div>
+                <span className={\`text-[10px] font-semibold px-2 py-1 rounded-full \${isDarkMode ? 'bg-[#3D4754] text-gray-200' : 'bg-rose-50 text-[#58111A]'}\`}>{deliveryNotifications.length}</span>
+              </div>
+              <div className="divide-y divide-gray-200/10">
+                {notificationsLoading ? (
+                  <div className="px-3.5 py-4 text-xs text-gray-400">Загружаем уведомления…</div>
+                ) : deliveryNotifications.length === 0 ? (
+                  <div className="px-3.5 py-5 text-center">
+                    <PackageCheck size={22} className="mx-auto mb-1.5 text-gray-400" />
+                    <p className="text-xs font-semibold text-gray-400">Доставленных заказов пока нет</p>
+                    <p className="text-[10px] text-gray-500 mt-1">Когда курьер подтвердит доставку в Telegram, событие появится здесь</p>
+                  </div>
+                ) : deliveryNotifications.map(notification => (
+                  <div key={notification.id} className="px-3.5 py-3 flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0"><PackageCheck size={17} /></div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-bold truncate">Заказ №{notification.publicNumber || '—'} доставлен</p>
+                        <span className="text-[10px] text-gray-400 whitespace-nowrap">{new Date(notification.deliveredAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{new Date(notification.deliveredAt).toLocaleDateString('ru-RU')} · Курьер: {notification.courierName}</p>
+                      <div className="mt-1.5 space-y-0.5">{(notification.items || []).map((item, index) => <p key={index} className="text-[11px] text-gray-500 truncate">{item.title} × {item.quantity}</p>)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-3.5 py-2 flex items-center justify-between border-t border-gray-200/15">
+                <span className="text-[10px] text-gray-400">Автообновление каждые 15 сек.</span>
+                <button type="button" onClick={fetchDeliveryNotifications} className="text-[10px] font-bold text-[#B45B68] flex items-center gap-1"><RefreshCw size={11} /> Обновить</button>
+              </div>
+            </div>
+
             {/* НОВОСТИ ВАЛЮТ */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-[#58111A] uppercase tracking-wider flex items-center gap-1.5">
@@ -1608,12 +1669,10 @@ const handleSavePurchaseBatch = async (e) => {
                 }`}>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-gray-400">USD / TJS</span>
-                    <span className="flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-green-100 text-green-700">
-                      <TrendingUp size={12} className="mr-0.5" /> +{rates.USD_change}%
-                    </span>
+                    {rates.USD_change !== null && <span className={\`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md \${rates.USD_change >= 0 ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}\`}>{rates.USD_change >= 0 ? <TrendingUp size={12} className="mr-0.5" /> : <TrendingDown size={12} className="mr-0.5" />}{rates.USD_change > 0 ? '+' : ''}{rates.USD_change.toFixed(5)}%</span>}
                   </div>
                   <div className="font-extrabold text-base">
-                    {rates.USD_TJS.toFixed(2)} <span className="text-xs font-medium text-gray-400">сом</span>
+                    {rates.USD_TJS.toFixed(6)} <span className="text-xs font-medium text-gray-400">сом</span>
                   </div>
                 </div>
 
@@ -1622,23 +1681,18 @@ const handleSavePurchaseBatch = async (e) => {
                 }`}>
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold text-gray-400">CNY / USD</span>
-                    <span className="flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700">
-                      <TrendingDown size={12} className="mr-0.5" /> {rates.CNY_change}%
-                    </span>
+                    {rates.CNY_change !== null && <span className={\`flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-md \${rates.CNY_change >= 0 ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}\`}>{rates.CNY_change >= 0 ? <TrendingUp size={12} className="mr-0.5" /> : <TrendingDown size={12} className="mr-0.5" />}{rates.CNY_change > 0 ? '+' : ''}{rates.CNY_change.toFixed(5)}%</span>}
                   </div>
                   <div className="font-extrabold text-base">
-                    ${rates.CNY_USD.toFixed(3)} <span className="text-xs font-medium text-gray-400">¥</span>
+                    ${rates.CNY_USD.toFixed(6)} <span className="text-xs font-medium text-gray-400">¥</span>
                   </div>
                 </div>
               </div>
 
-              <div className={`p-3 rounded-2xl border text-xs flex items-center gap-2.5 ${
-                isDarkMode ? 'bg-rose-950/20 border-rose-900/40 text-rose-200' : 'bg-rose-50/70 border-rose-200 text-[#58111A]'
-              }`}>
-                <Wallet size={18} className="flex-shrink-0" />
-                <p className="text-[11px] leading-snug">
-                  <b>Совет по закупке:</b> Юань опустился на {Math.abs(rates.CNY_change)}% — выгодное время для оплаты товаров на 1688!
-                </p>
+              <div className={\`p-3 rounded-2xl border text-[10px] flex flex-col gap-1 \${isDarkMode ? 'bg-[#2B323D] border-gray-700 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-500'}\`}>
+                <div className="flex items-center gap-1.5"><RefreshCw size={12} className={loading ? 'animate-spin' : ''} /><span>{loading ? 'Проверяем актуальный курс…' : 'Автоматическая проверка каждые 5 минут'}</span></div>
+                <span>Источник обновил данные: {rates.sourceUpdatedAt ? new Date(rates.sourceUpdatedAt).toLocaleString('ru-RU') : 'ожидаем первую загрузку'}</span>
+                <span>Последняя проверка: {rates.checkedAt ? new Date(rates.checkedAt).toLocaleTimeString('ru-RU') : '—'}. Частота изменения зависит от поставщика данных.</span>
               </div>
             </div>
 
