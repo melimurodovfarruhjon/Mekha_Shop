@@ -602,6 +602,13 @@ useEffect(() => {
   const [selectedCourierId, setSelectedCourierId] = useState(couriers[0]?.id || '');
   const [clientPhone, setClientPhone] = useState('');
   const [clientAddress, setClientAddress] = useState('');
+  const [clientCoordinates, setClientCoordinates] = useState(null);
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [addressSearchLoading, setAddressSearchLoading] = useState(false);
+  const [storeCoordinates, setStoreCoordinates] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('mekha_store_coordinates_v1') || 'null'); }
+    catch { return null; }
+  });
   const [deliveryComment, setDeliveryComment] = useState('');
   const [sendingStatus, setSendingStatus] = useState(false);
 
@@ -832,6 +839,49 @@ useEffect(() => {
   };
 
 
+const handleCaptureStoreLocation = () => {
+  if (!navigator.geolocation) {
+    setModalAlert({ title: 'Геолокация недоступна', message: 'Браузер не поддерживает определение местоположения.', type: 'error' });
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const coordinates = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+      setStoreCoordinates(coordinates);
+      localStorage.setItem('mekha_store_coordinates_v1', JSON.stringify(coordinates));
+      setModalAlert({ title: 'Местоположение сохранено', message: 'Координаты магазина будут передаваться вместе с заказами.', type: 'success' });
+    },
+    () => setModalAlert({ title: 'Не удалось определить магазин', message: 'Разрешите доступ к геолокации и повторите попытку рядом с магазином.', type: 'error' }),
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+  );
+};
+
+const handleFindClientAddress = async () => {
+  if (clientAddress.trim().length < 5) {
+    setModalAlert({ title: 'Уточните адрес', message: 'Введите улицу, номер дома и ориентир, если он есть.', type: 'error' });
+    return;
+  }
+  setAddressSearchLoading(true);
+  setAddressSuggestions([]);
+  setClientCoordinates(null);
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/maps/geocode?address=${encodeURIComponent(clientAddress.trim())}`);
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || 'Не удалось найти адрес');
+    setAddressSuggestions(data.results || []);
+    if (!data.results?.length) {
+      setModalAlert({ title: 'Адрес не найден', message: 'Добавьте район, улицу, номер дома или ориентир. Не выбирайте случайную точку на карте.', type: 'error' });
+    }
+  } catch (error) {
+    setModalAlert({ title: 'Ошибка поиска адреса', message: error.message || 'Сервис временно недоступен.', type: 'error' });
+  } finally {
+    setAddressSearchLoading(false);
+  }
+};
+
 const handleSendOrder = async (e) => {
   e.preventDefault();
 
@@ -857,6 +907,15 @@ const handleSendOrder = async (e) => {
     return;
   }
 
+  if (!storeCoordinates || !clientCoordinates) {
+    setModalAlert({
+      title: "Не хватает координат",
+      message: "Сначала определите местоположение магазина и найдите точку адреса клиента через поиск.",
+      type: "error"
+    });
+    return;
+  }
+
   setSendingStatus(true);
 
   try {
@@ -870,6 +929,10 @@ const handleSendOrder = async (e) => {
         courierChatId: courierObj.chatId,
         clientPhone,
         clientAddress,
+        clientLatitude: clientCoordinates.latitude,
+        clientLongitude: clientCoordinates.longitude,
+        storeLatitude: storeCoordinates.latitude,
+        storeLongitude: storeCoordinates.longitude,
         comment: deliveryComment,
         items: deliveryItems.map(item => ({
          productId: item.productId || null,
@@ -904,6 +967,8 @@ const handleSendOrder = async (e) => {
       setDeliveryItems([]);
       setClientPhone('');
       setClientAddress('');
+      setClientCoordinates(null);
+      setAddressSuggestions([]);
       setDeliveryComment('');
 
       setModalAlert({
@@ -2237,17 +2302,35 @@ const handleSavePurchaseBatch = async (e) => {
                 </div>
               </div>
 
-              <div className="relative">
-                <input 
-                  type="text"
-                  value={clientAddress}
-                  onChange={(e) => setClientAddress(e.target.value)}
-                  placeholder="Адрес получателя (например, пр. Рудаки 120)"
-                  className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
-                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                  }`}
-                />
-                <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
+              <div className="space-y-2">
+                <div className="relative">
+                  <input 
+                    type="text"
+                    value={clientAddress}
+                    onChange={(e) => { setClientAddress(e.target.value); setClientCoordinates(null); setAddressSuggestions([]); }}
+                    placeholder="Адрес клиента: улица, дом, ориентир"
+                    className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
+                      isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                    }`}
+                  />
+                  <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={handleFindClientAddress} disabled={addressSearchLoading || !clientAddress.trim()} className="flex-1 rounded-xl bg-[#58111A] text-white py-2.5 text-xs font-bold disabled:opacity-50">
+                    {addressSearchLoading ? 'Ищем адрес…' : 'Найти адрес на карте'}
+                  </button>
+                  <button type="button" onClick={handleCaptureStoreLocation} className={`rounded-xl px-3 py-2.5 text-xs font-bold border ${isDarkMode ? 'border-gray-600 text-white' : 'border-gray-200 text-gray-700'}`}>
+                    {storeCoordinates ? 'Магазин определён' : 'Геолокация магазина'}
+                  </button>
+                </div>
+                {storeCoordinates && <p className="text-[10px] text-green-600">Координаты магазина сохранены в этом браузере.</p>}
+                {addressSuggestions.map((suggestion, index) => (
+                  <button key={`${suggestion.latitude}-${suggestion.longitude}-${index}`} type="button" onClick={() => { setClientCoordinates({ latitude: suggestion.latitude, longitude: suggestion.longitude }); setAddressSuggestions([]); }} className={`w-full text-left rounded-xl border p-3 text-xs ${clientCoordinates?.latitude === suggestion.latitude && clientCoordinates?.longitude === suggestion.longitude ? 'border-green-500 bg-green-50 text-gray-900' : isDarkMode ? 'border-gray-700 bg-[#343D49] text-white' : 'border-gray-200 bg-white text-gray-800'}`}>
+                    <span className="font-semibold">{suggestion.label || 'Найденная точка'}</span>
+                    <span className="block mt-1 text-[10px] opacity-70">Выбрать эту точку</span>
+                  </button>
+                ))}
+                {clientCoordinates && <p className="text-[10px] text-green-600">Точка клиента выбрана. Координаты будут переданы курьеру.</p>}
               </div>
 
               <div className="relative">
