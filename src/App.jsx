@@ -889,7 +889,7 @@ const handleSendOrder = async (e) => {
     c => c.id === selectedCourierId
   );
 
-  if (!courierObj || !courierObj.chatId) {
+  if (!courierObj) {
     setModalAlert({
       title: "Ошибка",
       message: "Не выбран курьер или у него не указан Chat ID.",
@@ -926,7 +926,6 @@ const handleSendOrder = async (e) => {
       },
       body: JSON.stringify({
         courierName: courierObj.name,
-        courierChatId: courierObj.chatId,
         clientPhone,
         clientAddress,
         clientLatitude: clientCoordinates.latitude,
@@ -2178,7 +2177,7 @@ const handleSavePurchaseBatch = async (e) => {
         <section className="w-1/4 h-full flex-none overflow-y-auto p-3 pb-24">
           <div className="space-y-4">
             <div>
-              <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Отправка заказов в Telegram</h2>
+              <h2 className="text-xs font-bold text-[#58111A] uppercase tracking-wider">Отправка заказов в ZudGo</h2>
             </div>
 
             {/* Форма отправки */}
@@ -2397,7 +2396,7 @@ const handleSavePurchaseBatch = async (e) => {
                 className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-semibold active:scale-95 transition-transform flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2"
               >
                 <TelegramIcon size={14} className={sendingStatus ? 'animate-bounce' : ''} />
-                {sendingStatus ? 'Отправка в Telegram...' : 'Отправить заказ с товарами курьеру'}
+                {sendingStatus ? 'Отправка в ZudGo...' : 'Отправить заказ в ZudGo'}
               </button>
             </form>
 
