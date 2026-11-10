@@ -2246,6 +2246,17 @@ const handleSavePurchaseBatch = async (e) => {
                 </div>
               </div>
 
+              <div className="relative">
+                <input
+                  type="text"
+                  value={clientAddress}
+                  onChange={(e) => { setClientAddress(e.target.value); setClientCoordinates(null); }}
+                  placeholder="Адрес клиента: улица, дом, ориентир"
+                  className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
+                />
+                <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
+              </div>
+
               <div className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${storeCoordinates ? (isDarkMode ? 'bg-emerald-950/30 border-emerald-900 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800') : (isDarkMode ? 'bg-amber-950/20 border-amber-900 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-800')}`}>
                 <MapPin size={16} />
                 <span className="flex-1">{storeCoordinates ? 'Геопозиция магазина определена. Точка отправления будет передана курьеру.' : 'Геопозиция магазина ещё не включена.'}</span>
