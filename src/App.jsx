@@ -2248,19 +2248,6 @@ const handleSavePurchaseBatch = async (e) => {
                 </div>
                 <p className="text-[10px] text-gray-400">Введите оба адреса вручную. Backend автоматически преобразует их в координаты для ZudGo.</p>
               </div>
-              <div className="relative">
-                <input 
-                  type="text"
-                  value={newCourierChatId}
-                  onChange={(e) => setNewCourierChatId(e.target.value)}
-                  placeholder="Telegram Chat ID (например, 907176273)"
-                  className={`w-full pl-7 pr-3 p-2.5 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
-                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
-                  }`}
-                />
-                <Key size={13} className="absolute left-2.5 top-3 text-gray-400" />
-              </div>
-
               <button type="submit" className="w-full bg-[#58111A] text-white py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-transform flex items-center justify-center gap-1.5">
                 <Plus size={14} /> Сохранить курьера
               </button>
