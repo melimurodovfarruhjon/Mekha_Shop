@@ -2291,7 +2291,7 @@ const handleSavePurchaseBatch = async (e) => {
               Закрыть
             </button>
           </div>
-        </div>
+        </section>
       )}
 
      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ТОВАРА */}
