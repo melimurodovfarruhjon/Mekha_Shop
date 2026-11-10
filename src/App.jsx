@@ -610,6 +610,8 @@ useEffect(() => {
     try { return JSON.parse(localStorage.getItem('mekha_store_coordinates_v1') || 'null'); }
     catch { return null; }
   });
+  const [locationPromptOpen, setLocationPromptOpen] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [deliveryComment, setDeliveryComment] = useState('');
   const [sendingStatus, setSendingStatus] = useState(false);
 
@@ -845,18 +847,29 @@ const handleCaptureStoreLocation = () => {
     setModalAlert({ title: 'Геолокация недоступна', message: 'Браузер не поддерживает определение местоположения.', type: 'error' });
     return;
   }
+  setLocationLoading(true);
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const coordinates = {
         latitude: position.coords.latitude,
-        longitude: position.coords.longitude
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        capturedAt: new Date().toISOString()
       };
       setStoreCoordinates(coordinates);
       localStorage.setItem('mekha_store_coordinates_v1', JSON.stringify(coordinates));
-      setModalAlert({ title: 'Местоположение сохранено', message: 'Координаты магазина будут передаваться вместе с заказами.', type: 'success' });
+      setLocationLoading(false);
+      setLocationPromptOpen(false);
+      setModalAlert({ title: 'Геопозиция включена', message: 'Точка магазина сохранена. Она будет отправляться курьеру вместе с каждым заказом.', type: 'success' });
     },
-    () => setModalAlert({ title: 'Не удалось определить магазин', message: 'Разрешите доступ к геолокации и повторите попытку рядом с магазином.', type: 'error' }),
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+    (error) => {
+      setLocationLoading(false);
+      const message = error.code === 1
+        ? 'Разрешите доступ к местоположению для этого сайта в настройках браузера и повторите попытку.'
+        : 'Не удалось определить местоположение. Проверьте GPS и попробуйте ещё раз.';
+      setModalAlert({ title: 'Не удалось получить геопозицию', message, type: 'error' });
+    },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
   );
 };
 
@@ -889,8 +902,13 @@ const handleSendOrder = async (e) => {
     setModalAlert({ title: 'Ошибка', message: 'Добавьте хотя бы один товар в заказ.', type: 'error' });
     return;
   }
-  if (clientAddress.trim().length < 5 || storeAddress.trim().length < 5) {
-    setModalAlert({ title: 'Укажите адреса', message: 'Введите полный адрес клиента и адрес магазина. Backend определит координаты автоматически.', type: 'error' });
+  if (clientAddress.trim().length < 5) {
+    setModalAlert({ title: 'Укажите адрес клиента', message: 'Введите улицу, номер дома и ориентир. Backend преобразует адрес в координаты.', type: 'error' });
+    return;
+  }
+  if (!storeCoordinates || !Number.isFinite(Number(storeCoordinates.latitude)) || !Number.isFinite(Number(storeCoordinates.longitude))) {
+    setLocationPromptOpen(true);
+    setModalAlert({ title: 'Нужна геопозиция магазина', message: 'Нажмите «Включить геопозицию» и разрешите браузеру определить местоположение магазина.', type: 'info' });
     return;
   }
   setSendingStatus(true);
@@ -899,7 +917,9 @@ const handleSendOrder = async (e) => {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         courierName: 'ZudGo', clientPhone,
-        clientAddress: clientAddress.trim(), storeAddress: storeAddress.trim(),
+        clientAddress: clientAddress.trim(),
+        storeLatitude: Number(storeCoordinates.latitude),
+        storeLongitude: Number(storeCoordinates.longitude),
         comment: deliveryComment,
         items: deliveryItems.map(item => ({ productId: item.productId || null, title: item.title, qty: Number(item.qty) }))
       })
@@ -2226,25 +2246,10 @@ const handleSavePurchaseBatch = async (e) => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="relative">
-                  <input type="text" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} placeholder="Адрес клиента: улица, дом, ориентир"
-                    className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${isDarkMode ? "bg-[#3D4754] border-gray-700 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`} />
-                  <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
-                </div>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input type="text" value={storeAddress} onChange={(e) => { setStoreAddress(e.target.value); localStorage.setItem("mekha_store_address_v1", e.target.value); }} placeholder="Адрес магазина: улица, дом"
-                      className={`w-full pl-9 pr-3 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${isDarkMode ? "bg-[#3D4754] border-gray-700 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`} />
-                    <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
-                  </div>
-                  <button type="button" onClick={() => {
-                    const value = storeAddress.trim();
-                    localStorage.setItem("mekha_store_address_v1", value);
-                    setModalAlert({ title: "Мой магазин", message: value.length >= 5 ? "Адрес магазина сохранён. Backend определит координаты при отправке заказа." : "Сначала введите полный адрес магазина.", type: value.length >= 5 ? "success" : "info" });
-                  }} className={`rounded-xl px-3 py-2.5 text-xs font-bold border whitespace-nowrap ${isDarkMode ? "border-gray-600 text-white" : "border-gray-200 text-gray-700"}`}>Мой магазин</button>
-                </div>
-                <p className="text-[10px] text-gray-400">Оба адреса вводятся вручную. Backend преобразует их в координаты для карты ZudGo.</p>
+              <div className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${storeCoordinates ? (isDarkMode ? 'bg-emerald-950/30 border-emerald-900 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800') : (isDarkMode ? 'bg-amber-950/20 border-amber-900 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-800')}`}>
+                <MapPin size={16} />
+                <span className="flex-1">{storeCoordinates ? 'Геопозиция магазина определена. Точка отправления будет передана курьеру.' : 'Геопозиция магазина ещё не включена.'}</span>
+                <button type="button" onClick={() => setLocationPromptOpen(true)} className="font-bold underline underline-offset-2">{storeCoordinates ? 'Обновить' : 'Включить'}</button>
               </div>
 
               <div className="relative">
@@ -4477,6 +4482,32 @@ const handleSavePurchaseBatch = async (e) => {
         </div>
       )}
 
+      {locationPromptOpen && (
+        <div className="fixed inset-0 z-[95] bg-black/60 flex items-center justify-center p-4">
+          <div className={`w-full max-w-sm rounded-3xl p-5 shadow-2xl ${isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'}`}>
+            <div className="w-14 h-14 rounded-2xl bg-[#58111A]/10 text-[#8B2635] flex items-center justify-center mb-4">
+              <MapPin size={28} />
+            </div>
+            <h3 className="text-lg font-bold">Включите геопозицию магазина</h3>
+            <p className={`text-sm mt-2 leading-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              Чтобы курьер видел точку отправления на карте, разрешите Mekha Shop определить местоположение магазина. Адрес магазина вводить вручную больше не нужно.
+            </p>
+            {storeCoordinates && (
+              <p className="text-xs text-emerald-600 mt-3">Последняя геопозиция сохранена. При необходимости обновите её.</p>
+            )}
+            <button type="button" disabled={locationLoading} onClick={handleCaptureStoreLocation}
+              className="w-full mt-5 py-3 rounded-xl bg-[#58111A] text-white text-sm font-bold disabled:opacity-60 flex items-center justify-center gap-2">
+              {locationLoading ? <RefreshCw size={16} className="animate-spin" /> : <MapPin size={16} />}
+              {locationLoading ? 'Определяем местоположение...' : storeCoordinates ? 'Обновить геопозицию' : 'Включить геопозицию'}
+            </button>
+            <button type="button" disabled={locationLoading} onClick={() => setLocationPromptOpen(false)}
+              className={`w-full mt-2 py-3 rounded-xl text-sm font-semibold ${isDarkMode ? 'bg-[#3D4754] text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
+              Позже
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Нижняя навигация */}
       <nav className={`flex justify-around items-center border-t h-20 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-20 shadow-lg px-2 transition-colors ${
         isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
@@ -4547,7 +4578,10 @@ const handleSavePurchaseBatch = async (e) => {
         </button>
 
         <button 
-          onClick={() => setActiveTab('courier')} 
+          onClick={() => {
+            setActiveTab('courier');
+            setLocationPromptOpen(true);
+          }} 
           className={`flex flex-col items-center justify-center flex-1 h-full py-2 transition-all duration-300 ease-out ${
             activeTab === 'courier'
               ? '-translate-y-2 text-rose-500 font-bold'
