@@ -936,7 +936,8 @@ const handleSendOrder = async (e) => {
         items: deliveryItems.map(item => ({
          productId: item.productId || null,
          title: item.title,
-         qty: Number(item.qty)
+         qty: Number(item.qty),
+         photo: item.photo || null
     }))
       })
     });
@@ -2395,7 +2396,7 @@ const handleSavePurchaseBatch = async (e) => {
                 disabled={couriers.length === 0 || sendingStatus || !deliveryItems || deliveryItems.length === 0}
                 className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-semibold active:scale-95 transition-transform flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2"
               >
-                <TelegramIcon size={14} className={sendingStatus ? 'animate-bounce' : ''} />
+                <PackageCheck size={14} className={sendingStatus ? 'animate-bounce' : ''} />
                 {sendingStatus ? 'Отправка в ZudGo...' : 'Отправить заказ в ZudGo'}
               </button>
             </form>
