@@ -890,19 +890,16 @@ const handleSendOrder = async (e) => {
     return;
   }
   if (clientAddress.trim().length < 5 || storeAddress.trim().length < 5) {
-    setModalAlert({ title: 'Укажите адреса', message: 'Введите полный адрес клиента и адрес магазина. Координаты определит сервер автоматически.', type: 'error' });
+    setModalAlert({ title: 'Укажите адреса', message: 'Введите полный адрес клиента и адрес магазина. Backend определит координаты автоматически.', type: 'error' });
     return;
   }
   setSendingStatus(true);
   try {
     const response = await fetch(`${BACKEND_URL}/api/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        courierName: 'Тестовый курьер ZudGo',
-        clientPhone,
-        clientAddress: clientAddress.trim(),
-        storeAddress: storeAddress.trim(),
+        courierName: 'ZudGo', clientPhone,
+        clientAddress: clientAddress.trim(), storeAddress: storeAddress.trim(),
         comment: deliveryComment,
         items: deliveryItems.map(item => ({ productId: item.productId || null, title: item.title, qty: Number(item.qty) }))
       })
@@ -2232,22 +2229,723 @@ const handleSavePurchaseBatch = async (e) => {
               <div className="space-y-2">
                 <div className="relative">
                   <input type="text" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} placeholder="Адрес клиента: улица, дом, ориентир"
-                    className={"w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] " + (isDarkMode ? "bg-[#3D4754] border-gray-700 text-white" : "bg-gray-50 border-gray-200 text-gray-900")} />
+                    className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${isDarkMode ? "bg-[#3D4754] border-gray-700 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`} />
                   <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
                 </div>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <input type="text" value={storeAddress} onChange={(e) => { setStoreAddress(e.target.value); localStorage.setItem("mekha_store_address_v1", e.target.value); }} placeholder="Адрес магазина: улица, дом"
-                      className={"w-full pl-9 pr-3 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] " + (isDarkMode ? "bg-[#3D4754] border-gray-700 text-white" : "bg-gray-50 border-gray-200 text-gray-900")} />
+                      className={`w-full pl-9 pr-3 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${isDarkMode ? "bg-[#3D4754] border-gray-700 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`} />
                     <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
                   </div>
                   <button type="button" onClick={() => {
-                    localStorage.setItem("mekha_store_address_v1", storeAddress.trim());
-                    setModalAlert({ title: "Мой магазин", message: storeAddress.trim().length >= 5 ? "Адрес магазина сохранён. Backend определит координаты автоматически." : "Сначала введите адрес магазина в поле слева.", type: storeAddress.trim().length >= 5 ? "success" : "info" });
-                  }} className={"rounded-xl px-3 py-2.5 text-xs font-bold border whitespace-nowrap " + (isDarkMode ? "border-gray-600 text-white" : "border-gray-200 text-gray-700")}>Мой магазин</button>
+                    const value = storeAddress.trim();
+                    localStorage.setItem("mekha_store_address_v1", value);
+                    setModalAlert({ title: "Мой магазин", message: value.length >= 5 ? "Адрес магазина сохранён. Backend определит координаты при отправке заказа." : "Сначала введите полный адрес магазина.", type: value.length >= 5 ? "success" : "info" });
+                  }} className={`rounded-xl px-3 py-2.5 text-xs font-bold border whitespace-nowrap ${isDarkMode ? "border-gray-600 text-white" : "border-gray-200 text-gray-700"}`}>Мой магазин</button>
                 </div>
-                <p className="text-[10px] text-gray-400">Введите оба адреса вручную. Backend автоматически преобразует их в координаты для ZudGo.</p>
+                <p className="text-[10px] text-gray-400">Оба адреса вводятся вручную. Backend преобразует их в координаты для карты ZudGo.</p>
               </div>
+
+              <div className="relative">
+                <input 
+                  type="text"
+                  value={clientPhone}
+                  onChange={(e) => setClientPhone(e.target.value)}
+                  placeholder="Телефон (+992...)"
+                  className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
+                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                  }`}
+                />
+                <Phone size={15} className="absolute left-3 top-3.5 text-gray-400" />
+              </div>
+
+              <div className="relative">
+                <input 
+                  type="text"
+                  value={deliveryComment}
+                  onChange={(e) => setDeliveryComment(e.target.value)}
+                  placeholder="Комментарий для курьера (опционально)"
+                  className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
+                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                  }`}
+                />
+                <MessageSquare size={15} className="absolute left-3 top-3.5 text-gray-400" />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={sendingStatus || !deliveryItems || deliveryItems.length === 0}
+                className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-semibold active:scale-95 transition-transform flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2"
+              >
+                <Plus size={14} className={sendingStatus ? 'animate-pulse' : ''} />
+                {sendingStatus ? 'Отправка в ZudGo...' : 'Отправить заказ в ZudGo'}
+              </button>
+            </form>
+
+            {/* Список отправок (История) */}
+            <div className="space-y-2.5">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">История отправок</h3>
+              {deliveries.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-4">История отправок пуста</p>
+              ) : (
+                deliveries.map(item => (
+                  <div key={item.id} className={`p-3.5 rounded-2xl border shadow-sm space-y-2 ${
+                    isDarkMode ? 'bg-[#2B323D] border-gray-700' : 'bg-white border-rose-100'
+                  }`}>
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">Курьер: {item.courierName}</span>
+                        <div className="space-y-1">
+                          {item.items ? (
+                            item.items.map((prod, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                {prod.photo && <img src={prod.photo} alt="" className="w-6 h-6 object-cover rounded-md border" />}
+                                <span className="font-bold text-xs">{prod.title} ({prod.qty} шт.)</span>
+                              </div>
+                            ))
+                          ) : (
+                            <span className="font-bold text-xs">{item.itemTitle} ({item.qty} шт.)</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${
+                        item.status && item.status.includes('Доставлено') ? 'bg-emerald-100 text-emerald-800' :
+                        item.status && item.status.includes('Возврат') ? 'bg-red-100 text-red-800' :
+                        'bg-rose-50 text-[#58111A] border border-rose-200'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] opacity-80 space-y-1 pt-1 border-t border-gray-100 dark:border-gray-700">
+                      <p>📍 Адрес: {item.address}</p>
+                      <p>📞 Тел: {item.clientPhone}</p>
+                      {item.comment && <p>💬 Комментарий: {item.comment}</p>}
+                      
+                      <div className="flex justify-between items-center pt-1 mt-1 border-t border-dashed border-gray-200 dark:border-gray-700 text-[10px] opacity-70">
+                        <span>📤 Отправлено: {item.sentAt || 'Не указано'}</span>
+                        {item.updatedAt && <span>⏱ Ответ: {item.updatedAt}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+          </div>
+        </section>
+        
+       </div>
+      </main>
+
+      {/* КНОПКА ОТЧЁТОВ В РАЗДЕЛЕ ТОВАРОВ */}
+      {activeTab === 'products' && !isReportModalOpen && (
+        <button
+          type="button"
+          onClick={openPurchaseReports}
+          aria-label="Открыть отчёты по поставкам"
+          title="Отчёты по поставкам"
+          style={{ right: 'max(1rem, calc((100vw - 448px) / 2 + 1rem))' }}
+          className={`fixed bottom-24 z-30 w-14 h-14 rounded-full bg-[#58111A] text-white shadow-xl flex items-center justify-center border-4 active:scale-95 transition-transform ${
+            isDarkMode ? 'border-[#2B323D]' : 'border-[#FAF8F5]'
+          }`}
+        >
+          <FileText size={23} />
+        </button>
+      )}
+
+      {/* ОТЧЁТЫ ПО ЗАКУПОЧНЫМ ПОСТАВКАМ */}
+      {isReportModalOpen && (() => {
+        const selectedBatch = purchaseReports.find(
+          batch => String(batch.id) === String(selectedReportBatchId)
+        );
+        const items = selectedBatch?.items || [];
+        const totalDelivered = items.reduce((sum, item) => sum + Number(item.deliveredQuantity || 0), 0);
+        const totalSold = items.reduce((sum, item) => sum + Number(item.soldQuantity || 0), 0);
+        const totalRemaining = items.reduce((sum, item) => sum + Number(item.remainingQuantity || 0), 0);
+        const hasMissingPrices = items.some(item => Boolean(item.hasMissingSalePrice));
+        const totalRevenue = items.reduce(
+          (sum, item) => sum + (Number(item.revenueTjs) || 0),
+          0
+        );
+        const totalProfit = items.reduce(
+          (sum, item) => sum + (Number(item.profitTjs) || 0),
+          0
+        );
+        const formatReportMoney = value =>
+          `${Number(value || 0).toLocaleString('ru-RU', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })} сом.`;
+        const batchTitle = batch => {
+          const firstLine = String(batch.notes || '').split(/\r?\n/)[0].trim();
+          return firstLine || ('Поставка №' + batch.batchNumber);
+        };
+        const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[char]));
+        const buildPurchaseReportPdf = async () => {
+          const pageWidth = 1123;
+          const pageHeight = 794;
+          const margin = 44;
+          const rowHeight = 44;
+          const rowsPerPage = 8;
+          const reportItems = items || [];
+          const pageCount = Math.max(1, Math.ceil(reportItems.length / rowsPerPage));
+          const pages = [];
+          const money = value => Number(value || 0).toLocaleString('ru-RU', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+          const roundedRect = (ctx, x, y, width, height, radius, fill) => {
+            ctx.beginPath();
+            ctx.roundRect(x, y, width, height, radius);
+            ctx.fillStyle = fill;
+            ctx.fill();
+          };
+
+          for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+            const canvas = document.createElement('canvas');
+            canvas.width = pageWidth;
+            canvas.height = pageHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Не удалось подготовить PDF');
+
+            ctx.fillStyle = '#f7f5f3';
+            ctx.fillRect(0, 0, pageWidth, pageHeight);
+
+            // Фирменная шапка Mekha Shop
+            ctx.fillStyle = '#58111a';
+            ctx.fillRect(0, 0, pageWidth, 116);
+            roundedRect(ctx, margin, 24, 62, 62, 18, '#ffffff');
+            ctx.fillStyle = '#58111a';
+            ctx.font = 'bold 34px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('M', margin + 31, 66);
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 27px Arial, sans-serif';
+            ctx.fillText('MEKHA SHOP', margin + 82, 48);
+            ctx.fillStyle = '#f0dadd';
+            ctx.font = '15px Arial, sans-serif';
+            ctx.fillText('УЧЁТ ТОВАРОВ И ФИНАНСОВ', margin + 83, 74);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#f0dadd';
+            ctx.font = '14px Arial, sans-serif';
+            ctx.fillText('ОТЧЁТ ПО ПОСТАВКЕ', pageWidth - margin, 48);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 18px Arial, sans-serif';
+            ctx.fillText('№' + selectedBatch.batchNumber, pageWidth - margin, 76);
+
+            // Название и дата
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#24212a';
+            ctx.font = 'bold 25px Arial, sans-serif';
+            const heading = batchTitle(selectedBatch);
+            ctx.fillText(heading, margin, 158, pageWidth - margin * 2);
+            ctx.fillStyle = '#77727a';
+            ctx.font = '15px Arial, sans-serif';
+            ctx.fillText('Дата закупки: ' + new Date(selectedBatch.purchasedAt).toLocaleString('ru-RU'), margin, 184);
+
+            // Карточки итоговых количеств
+            const summary = [
+              ['ПРИВЕЗЕНО', totalDelivered, '#58111a'],
+              ['ПРОДАНО', totalSold, '#344054'],
+              ['ОСТАЛОСЬ', totalRemaining, '#344054']
+            ];
+            const cardGap = 16;
+            const cardWidth = (pageWidth - margin * 2 - cardGap * 2) / 3;
+            summary.forEach((entry, index) => {
+              const x = margin + index * (cardWidth + cardGap);
+              roundedRect(ctx, x, 207, cardWidth, 76, 12, '#ffffff');
+              ctx.fillStyle = entry[2];
+              ctx.fillRect(x, 207, 5, 76);
+              ctx.fillStyle = '#89838a';
+              ctx.font = 'bold 13px Arial, sans-serif';
+              ctx.textAlign = 'left';
+              ctx.fillText(entry[0], x + 20, 235);
+              ctx.fillStyle = '#24212a';
+              ctx.font = 'bold 27px Arial, sans-serif';
+              ctx.fillText(String(entry[1]), x + 20, 267);
+            });
+
+            // Таблица
+            const columns = [
+              { label: 'Товар', width: 300, align: 'left' },
+              { label: 'Привезено, шт.', width: 135, align: 'right' },
+              { label: 'Продано, шт.', width: 125, align: 'right' },
+              { label: 'Остаток, шт.', width: 115, align: 'right' },
+              { label: 'Выручка, сом.', width: 180, align: 'right' },
+              { label: 'Чистая прибыль, сом.', width: 180, align: 'right' }
+            ];
+            let columnX = margin;
+            columns.forEach(column => {
+              column.x = columnX;
+              columnX += column.width;
+            });
+            let y = 307;
+            roundedRect(ctx, margin, y, pageWidth - margin * 2, 42, 8, '#58111a');
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 13px Arial, sans-serif';
+            columns.forEach(column => {
+              ctx.textAlign = column.align;
+              ctx.fillText(column.label, column.align === 'right' ? column.x + column.width - 12 : column.x + 14, y + 26, column.width - 24);
+            });
+            y += 42;
+
+            const pageItems = reportItems.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage);
+            pageItems.forEach((item, rowIndex) => {
+              ctx.fillStyle = rowIndex % 2 === 0 ? '#ffffff' : '#f0ece9';
+              ctx.fillRect(margin, y, pageWidth - margin * 2, rowHeight);
+              ctx.fillStyle = '#302b31';
+              ctx.font = '15px Arial, sans-serif';
+              const title = String(item.title || 'Товар');
+              let displayTitle = title;
+              while (ctx.measureText(displayTitle).width > 315 && displayTitle.length > 4) displayTitle = displayTitle.slice(0, -2) + '…';
+              ctx.textAlign = 'left';
+              ctx.fillText(displayTitle, margin + 14, y + 27, 315);
+              const values = [
+                Number(item.deliveredQuantity) || 0,
+                Number(item.soldQuantity) || 0,
+                Number(item.remainingQuantity) || 0,
+                money(item.revenueTjs) + (item.hasMissingSalePrice ? ' *' : ''),
+                money(item.profitTjs) + (item.hasMissingSalePrice ? ' *' : '')
+              ];
+              columns.slice(1).forEach((column, index) => {
+                ctx.textAlign = 'right';
+                ctx.fillStyle = index === 4
+                  ? ((Number(item.profitTjs) || 0) >= 0 ? '#16804a' : '#c0392b')
+                  : '#302b31';
+                ctx.font = index === 4 ? 'bold 14px Arial, sans-serif' : '14px Arial, sans-serif';
+                ctx.fillText(String(values[index]), column.x + column.width - 12, y + 27, column.width - 24);
+              });
+              ctx.strokeStyle = '#e7e0dc';
+              ctx.beginPath();
+              ctx.moveTo(margin, y + rowHeight);
+              ctx.lineTo(pageWidth - margin, y + rowHeight);
+              ctx.stroke();
+              y += rowHeight;
+            });
+
+            if (pageIndex === pageCount - 1) {
+              ctx.fillStyle = '#eee5e2';
+              ctx.fillRect(margin, y, pageWidth - margin * 2, 48);
+              ctx.fillStyle = '#302b31';
+              ctx.font = 'bold 15px Arial, sans-serif';
+              ctx.textAlign = 'left';
+              ctx.fillText('ИТОГО', margin + 14, y + 30);
+              const totals = [totalDelivered, totalSold, totalRemaining, money(totalRevenue), money(totalProfit)];
+              columns.slice(1).forEach((column, index) => {
+                ctx.textAlign = 'right';
+                ctx.fillStyle = index === 4 ? (totalProfit >= 0 ? '#16804a' : '#c0392b') : '#302b31';
+                ctx.font = 'bold 14px Arial, sans-serif';
+                ctx.fillText(String(totals[index]), column.x + column.width - 12, y + 30, column.width - 24);
+              });
+              y += 48;
+            }
+
+            if (hasMissingPrices) {
+              ctx.fillStyle = '#fff4df';
+              roundedRect(ctx, margin, Math.min(y + 12, 704), pageWidth - margin * 2, 34, 7, '#fff4df');
+              ctx.fillStyle = '#946200';
+              ctx.textAlign = 'left';
+              ctx.font = '12px Arial, sans-serif';
+              ctx.fillText('* Для части продаж цена не была зафиксирована. Финансовые показатели неполные.', margin + 12, Math.min(y + 34, 726), pageWidth - margin * 2 - 24);
+            }
+
+            // Подвал
+            ctx.strokeStyle = '#e2d9d4';
+            ctx.beginPath();
+            ctx.moveTo(margin, 750);
+            ctx.lineTo(pageWidth - margin, 750);
+            ctx.stroke();
+            ctx.fillStyle = '#8b858a';
+            ctx.font = '12px Arial, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Mekha Shop · Отчёт сформирован автоматически', margin, 773);
+            ctx.textAlign = 'right';
+            ctx.fillText('Страница ' + (pageIndex + 1) + ' из ' + pageCount, pageWidth - margin, 773);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            const binary = atob(dataUrl.split(',')[1]);
+            const jpeg = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) jpeg[i] = binary.charCodeAt(i);
+            pages.push(jpeg);
+          }
+
+          const encoder = new TextEncoder();
+          const chunks = [];
+          const offsets = [0];
+          let byteLength = 0;
+          const push = chunk => { chunks.push(chunk); byteLength += chunk.length; };
+          const pushText = text => push(encoder.encode(text));
+          const objectCount = 2 + pages.length * 3;
+          pushText('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+          const addObject = (id, objectParts) => {
+            offsets[id] = byteLength;
+            pushText(id + ' 0 obj\n');
+            objectParts.forEach(part => typeof part === 'string' ? pushText(part) : push(part));
+            pushText('\nendobj\n');
+          };
+          addObject(1, ['<< /Type /Catalog /Pages 2 0 R >>']);
+          const kids = pages.map((_, i) => (3 + i * 3) + ' 0 R').join(' ');
+          addObject(2, ['<< /Type /Pages /Kids [' + kids + '] /Count ' + pages.length + ' >>']);
+          pages.forEach((jpeg, i) => {
+            const pageId = 3 + i * 3;
+            const imageId = pageId + 1;
+            const contentId = pageId + 2;
+            addObject(pageId, ['<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /XObject << /Im0 ' + imageId + ' 0 R >> >> /Contents ' + contentId + ' 0 R >>']);
+            addObject(imageId, ['<< /Type /XObject /Subtype /Image /Width ' + pageWidth + ' /Height ' + pageHeight + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpeg.length + ' >>\nstream\n', jpeg, '\nendstream']);
+            const stream = 'q\n842 0 0 595 0 0 cm\n/Im0 Do\nQ';
+            addObject(contentId, ['<< /Length ' + encoder.encode(stream).length + ' >>\nstream\n' + stream + '\nendstream']);
+          });
+          const xrefOffset = byteLength;
+          pushText('xref\n0 ' + (objectCount + 1) + '\n0000000000 65535 f \n');
+          for (let id = 1; id <= objectCount; id++) pushText(String(offsets[id]).padStart(10, '0') + ' 00000 n \n');
+          pushText('trailer\n<< /Size ' + (objectCount + 1) + ' /Root 1 0 R >>\nstartxref\n' + xrefOffset + '\n%%EOF');
+          return new Blob(chunks, { type: 'application/pdf' });
+        };
+        const sharePurchaseReport = async () => {
+          try {
+            const blob = await buildPurchaseReportPdf();
+            const file = new File([blob], 'Mekha-Shop-report-' + selectedBatch.batchNumber + '.pdf', { type: 'application/pdf' });
+            if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+              await navigator.share({ title: 'Отчёт Mekha Shop', files: [file] });
+            } else {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = file.name;
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 30000);
+              setModalAlert({ title: 'PDF сохранён', message: 'На этом устройстве нельзя отправить файл напрямую. PDF скачан — прикрепите его к сообщению контакту.', type: 'success' });
+            }
+          } catch (error) {
+            if (error.name !== 'AbortError') {
+              console.error('PDF share failed:', error);
+              setModalAlert({ title: 'Ошибка отправки', message: error.message || 'Не удалось подготовить PDF для отправки.', type: 'error' });
+            }
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className={`w-full max-w-xl max-h-[92dvh] sm:max-h-[88dvh] overflow-hidden rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col ${
+              isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
+            }`}>
+              <div className="px-4 py-4 border-b border-gray-200/20 flex items-center gap-3">
+                {selectedBatch && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedReportBatchId(null)}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                      isDarkMode ? 'bg-[#3D4754]' : 'bg-gray-100'
+                    }`}
+                    aria-label="Назад к списку поставок"
+                  >
+                    <span className="text-xl leading-none">‹</span>
+                  </button>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-bold truncate">
+                    {selectedBatch ? 'Отчёт по поставке' : 'Отчёты по поставкам'}
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {selectedBatch
+                      ? `Поставка №${selectedBatch.batchNumber}`
+                      : 'Выберите поставку для просмотра результатов'}
+                  </p>
+                </div>
+                {selectedBatch && (
+                  <button type="button" onClick={sharePurchaseReport} title="Поделиться PDF-отчётом" aria-label="Поделиться PDF-отчётом" className="h-9 px-3 rounded-xl bg-[#58111A] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-sm active:scale-95 transition-transform">
+                    <Share2 size={15} /> Поделиться
+                  </button>
+                )}
+                <button type="button" onClick={() => { setIsReportModalOpen(false); setSelectedReportBatchId(null); }} className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 shrink-0" aria-label="Закрыть отчёты">
+                  <X size={19} />
+                </button>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+                {reportLoading ? (
+                  <div className="py-12 flex flex-col items-center gap-3 text-sm text-gray-400">
+                    <RefreshCw size={22} className="animate-spin" />
+                    Загружаем поставки...
+                  </div>
+                ) : selectedBatch ? (
+                  <>
+                    <div className={`rounded-2xl p-3 space-y-1 ${
+                      isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50'
+                    }`}>
+                      <p className="font-bold text-sm">{batchTitle(selectedBatch)}</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(selectedBatch.purchasedAt).toLocaleString('ru-RU', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
+                        <p className="text-[10px] text-gray-400">Прив.</p>
+                        <p className="text-lg font-bold">{totalDelivered}</p>
+                      </div>
+                      <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
+                        <p className="text-[10px] text-gray-400">Прод.</p>
+                        <p className="text-lg font-bold">{totalSold}</p>
+                      </div>
+                      <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}`}>
+                        <p className="text-[10px] text-gray-400">Ост.</p>
+                        <p className="text-lg font-bold">{totalRemaining}</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-200/20 overflow-hidden">
+                      <div className="w-full">
+                        <table className="w-full table-fixed text-[10px] sm:text-xs">
+                          <thead className={isDarkMode ? 'bg-[#343D49]' : 'bg-gray-50'}>
+                            <tr className="text-left text-gray-400">
+                              <th className="w-[27%] px-1.5 py-2 text-left font-semibold">Товар</th>
+                              <th className="w-[13%] px-1 py-2 text-right font-semibold">Привезено, шт.</th>
+                              <th className="w-[12%] px-1 py-2 text-right font-semibold">Продано, шт.</th>
+                              <th className="w-[12%] px-1 py-2 text-right font-semibold">Остаток, шт.</th>
+                              <th className="w-[18%] px-1 py-2 text-right font-semibold">Выручка</th>
+                              <th className="w-[18%] px-1 py-2 text-right font-semibold">Чистая прибыль</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {items.map(item => {
+                              const sold = Number(item.soldQuantity) || 0;
+                              const revenue = Number(item.revenueTjs) || 0;
+                              const profit = Number(item.profitTjs) || 0;
+                              const hasMissingPrice = Boolean(item.hasMissingSalePrice);
+
+                              return (
+                                <tr key={item.id} className="border-t border-gray-200/10">
+                                  <td className="px-1.5 py-2 font-semibold">
+                                    <div className="flex items-center gap-2">
+                                      {item.photo ? (
+                                        <img src={item.photo} alt="" className="hidden sm:block w-7 h-7 rounded-md object-cover shrink-0" />
+                                      ) : (
+                                        <div className={`w-8 h-8 rounded-lg shrink-0 ${isDarkMode ? 'bg-[#485361]' : 'bg-gray-100'}`} />
+                                      )}
+                                      <span className="truncate">{item.title}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-1 py-2 text-right tabular-nums">{item.deliveredQuantity}</td>
+                                  <td className="px-3 py-3 text-right tabular-nums">{sold}</td>
+                                  <td className="px-3 py-3 text-right tabular-nums">{item.remainingQuantity}</td>
+                                  <td className="px-1 py-2 text-right whitespace-nowrap tabular-nums">
+                                    {sold === 0 ? '0.00' : hasMissingPrice && revenue === 0 ? 'Цена не указана' : `${formatReportMoney(revenue)}${hasMissingPrice ? ' *' : ''}`}
+                                  </td>
+                                  <td className={`px-1 py-2 text-right whitespace-nowrap tabular-nums font-semibold ${
+                                    profit >= 0 ? 'text-emerald-500' : 'text-red-500'
+                                  }`}>
+                                    {sold === 0 ? '0.00' : hasMissingPrice && revenue === 0 ? '—' : `${formatReportMoney(profit)}${hasMissingPrice ? ' *' : ''}`}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot className={isDarkMode ? 'bg-[#343D49]' : 'bg-rose-50'}>
+                            <tr className="border-t-2 border-gray-300/30 font-bold">
+                              <td className="px-1.5 py-2">Итого</td>
+                              <td className="px-3 py-3 text-right tabular-nums">{totalDelivered}</td>
+                              <td className="px-3 py-3 text-right tabular-nums">{totalSold}</td>
+                              <td className="px-3 py-3 text-right tabular-nums">{totalRemaining}</td>
+                              <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums">
+                                {formatReportMoney(totalRevenue)}{hasMissingPrices ? ' *' : ''}
+                              </td>
+                              <td className={`px-1 py-2 text-right whitespace-nowrap tabular-nums ${totalProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                {formatReportMoney(totalProfit)}{hasMissingPrices ? ' *' : ''}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+
+                    {items.length === 0 && (
+                      <p className="text-center text-sm text-gray-400 py-6">В этой поставке нет товарных позиций.</p>
+                    )}
+
+                    {hasMissingPrices && (
+                      <div className={`rounded-xl p-3 text-[11px] text-amber-500 ${
+                        isDarkMode ? 'bg-amber-950/20' : 'bg-amber-50'
+                      }`}>
+                        * Финансовые данные частичные: для части продаж цена продажи не была зафиксирована.
+                      </div>
+                    )}
+                  </>
+                ) : purchaseReports.length === 0 ? (
+                  <div className="py-12 text-center space-y-2">
+                    <FileText size={30} className="mx-auto text-gray-400" />
+                    <p className="font-semibold text-sm">Поставок пока нет</p>
+                    <p className="text-xs text-gray-400">Сохранённые закупочные партии появятся здесь.</p>
+                  </div>
+                ) : (
+                  purchaseReports.map(batch => {
+                    const quantity = batch.items.reduce(
+                      (sum, item) => sum + Number(item.deliveredQuantity || 0),
+                      0
+                    );
+                    return (
+                      <button
+                        key={batch.id}
+                        type="button"
+                        onClick={() => setSelectedReportBatchId(batch.id)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left transition-colors ${
+                          isDarkMode
+                            ? 'bg-[#343D49] border-gray-700 hover:border-rose-400'
+                            : 'bg-white border-gray-200 hover:border-[#8B2635]'
+                        }`}
+                      >
+                        <div className="w-11 h-11 rounded-xl bg-[#58111A] text-white flex items-center justify-center shrink-0">
+                          <FileText size={19} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold truncate">{batchTitle(batch)}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            №{batch.batchNumber} · {new Date(batch.purchasedAt).toLocaleDateString('ru-RU')} · {batch.items.length} товаров · {quantity} шт.
+                          </p>
+                        </div>
+                        <span className="text-gray-400 text-xl">›</span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {!selectedBatch && !reportLoading && (
+                <div className="p-3 border-t border-gray-200/20">
+                  <button
+                    type="button"
+                    onClick={openPurchaseReports}
+                    className={`w-full py-2.5 rounded-xl text-xs font-semibold ${
+                      isDarkMode ? 'bg-[#343D49]' : 'bg-gray-100'
+                    }`}
+                  >
+                    Обновить список
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ ТОВАРА */}
+        {productToDelete && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div className={`w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center space-y-4 ${
+              isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
+            }`}>
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+                <Trash2 size={24} />
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold">
+                  {deleteConfirmationStep === 1 ? 'Первое подтверждение' : 'Подтвердите удаление ещё раз'}
+                </h3>
+                <p className="text-xs text-gray-400 mt-2">
+                  {deleteConfirmationStep === 1
+                    ? `Вы собираетесь удалить «${productToDelete.title}». Для продолжения потребуется ещё одно подтверждение.`
+                    : `Последнее предупреждение: товар «${productToDelete.title}» будет удалён из каталога. Продолжить?`}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-2">
+                  Товар с остатком на складе удалить нельзя.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (deleteConfirmationStep === 1) {
+                    setDeleteConfirmationStep(2);
+                  } else {
+                    confirmDeleteProduct();
+                  }
+                }}
+                className="w-full bg-[#58111A] text-white py-3 rounded-xl text-xs font-bold"
+              >
+                {deleteConfirmationStep === 1 ? 'Продолжить' : 'Да, окончательно удалить'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setProductToDelete(null);
+                  setDeleteConfirmationStep(1);
+                }}
+                className="w-full py-2 text-xs text-gray-400 font-semibold"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        )}
+
+      {/* МОДАЛЬНОЕ ОКНО ПРОФИЛЯ И КУРЬЕРОВ */}
+      {isAddModalOpen && (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center overflow-y-auto overscroll-contain p-3">
+        <div className={`w-full max-w-sm max-h-[calc(100dvh-1.5rem)] overflow-y-auto overscroll-contain rounded-3xl p-5 shadow-2xl space-y-5 relative animate-scale-up ${
+            isDarkMode ? 'bg-[#2B323D] text-white' : 'bg-white text-gray-900'
+          }`}>
+            <button 
+              onClick={() => setIsProfileModalOpen(false)}
+              className={`absolute top-3.5 right-3.5 p-1.5 rounded-full ${
+                isDarkMode ? 'bg-[#3D4754] text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-500 hover:text-black'
+              }`}
+            >
+              <X size={16} />
+            </button>
+
+            <div className="flex items-center gap-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+              <div className="w-12 h-12 rounded-full bg-[#58111A] text-white font-bold flex items-center justify-center text-lg shadow-inner">
+                M
+              </div>
+              <div>
+                <h3 className="font-bold text-sm">Настройки Telegram Бота</h3>
+                <p className="text-[10px] text-gray-400">Привязка Chat ID курьеров</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddCourier} className="space-y-3 pt-1">
+              <h4 className="text-xs font-bold text-[#58111A] uppercase tracking-wider flex items-center gap-1.5">
+                <Truck size={14} /> Добавить Chat ID курьера
+              </h4>
+
+              <input 
+                type="text"
+                value={newCourierName}
+                onChange={(e) => setNewCourierName(e.target.value)}
+                placeholder="Имя курьера (например, Нодир)"
+                className={`w-full p-2.5 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
+                  isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                }`}
+              />
+
+              <div className="relative">
+                <input 
+                  type="text"
+                  value={newCourierChatId}
+                  onChange={(e) => setNewCourierChatId(e.target.value)}
+                  placeholder="Telegram Chat ID (например, 907176273)"
+                  className={`w-full pl-7 pr-3 p-2.5 border rounded-xl text-xs outline-none focus:border-[#58111A] ${
+                    isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'
+                  }`}
+                />
+                <Key size={13} className="absolute left-2.5 top-3 text-gray-400" />
+              </div>
+
               <button type="submit" className="w-full bg-[#58111A] text-white py-2.5 rounded-xl text-xs font-semibold active:scale-95 transition-transform flex items-center justify-center gap-1.5">
                 <Plus size={14} /> Сохранить курьера
               </button>
@@ -2291,7 +2989,7 @@ const handleSavePurchaseBatch = async (e) => {
               Закрыть
             </button>
           </div>
-        </section>
+        </div>
       )}
 
      {/* МОДАЛЬНОЕ ОКНО ДОБАВЛЕНИЯ ТОВАРА */}
