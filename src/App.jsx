@@ -935,7 +935,13 @@ const handleSendOrder = async (e) => {
       };
       setDeliveries(prev => [newDelivery, ...prev]);
       setDeliveryItems([]); setClientPhone(''); setClientAddress(''); setDeliveryComment('');
-      setModalAlert({ title: 'Успешно отправлено!', message: `Заказ №${data.publicNumber} отправлен в ZudGo.`, type: 'success' });
+      setModalAlert({
+        title: data.pushSent > 0 ? 'Заказ отправлен в ZudGo' : 'Заказ сохранён',
+        message: data.pushSent > 0
+          ? `Заказ №${data.publicNumber} сохранён и Push отправлен курьерскому устройству.`
+          : `Заказ №${data.publicNumber} сохранён на сервере. ${data.pushWarning || 'Push пока не доставлен; приложение курьера получит заказ при следующей синхронизации.'}`,
+        type: data.pushSent > 0 ? 'success' : 'info'
+      });
     } else {
       setModalAlert({ title: data.saved ? 'Заказ сохранён, но не отправлен' : 'Ошибка отправки', message: data.error || 'Не удалось отправить заказ.', type: 'error' });
     }
