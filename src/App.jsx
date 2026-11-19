@@ -470,6 +470,30 @@ useEffect(() => {
           continue;
         }
 
+        if (event.type === 'ACCEPTED') {
+          if (!String(order.status || '').includes('Курьер принял')) {
+            const acceptedOrder = {
+              ...order,
+              status: 'Курьер принял заказ ✅',
+              updatedAt: new Date().toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            };
+            const nextDeliveries = [...current];
+            nextDeliveries[index] = acceptedOrder;
+            deliveriesRef.current = nextDeliveries;
+            setDeliveries(nextDeliveries);
+            setModalAlert({
+              title: 'Курьер принял заказ',
+              message: `Заказ №${order.publicNumber || '—'} принят в работу.`,
+              type: 'success'
+            });
+          }
+          eventIdsToAck.push(eventId);
+          continue;
+        }
+
         if (!['DELIVERED', 'RETURN'].includes(event.type)) continue;
 
         const updatedOrder = {
@@ -912,9 +936,12 @@ const handleSendOrder = async (e) => {
     return;
   }
   setSendingStatus(true);
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 35000);
   try {
     const response = await fetch(`${BACKEND_URL}/api/orders`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         courierName: 'ZudGo', clientPhone,
         clientAddress: clientAddress.trim(),
@@ -927,7 +954,8 @@ const handleSendOrder = async (e) => {
     const data = await response.json();
     if (response.status === 201 && data.success) {
       const newDelivery = {
-        id: data.orderId, orderId: data.orderId, items: deliveryItems, courierName: 'ZudGo',
+        id: data.orderId, orderId: data.orderId, publicNumber: data.publicNumber,
+        items: deliveryItems, courierName: 'ZudGo',
         clientPhone, address: clientAddress, comment: deliveryComment,
         status: 'Ожидает ответа курьера ⏳',
         sentAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }),
@@ -947,8 +975,17 @@ const handleSendOrder = async (e) => {
     }
   } catch (err) {
     console.error('Order request error:', err);
-    setModalAlert({ title: 'Ошибка сети', message: 'Не удалось связаться с сервером.', type: 'error' });
-  } finally { setSendingStatus(false); }
+    setModalAlert({
+      title: err.name === 'AbortError' ? 'Сервер долго не отвечает' : 'Ошибка сети',
+      message: err.name === 'AbortError'
+        ? 'Ответ не получен за 35 секунд. Заказ мог сохраниться — проверьте историю отправок, прежде чем повторять отправку.'
+        : err.message || 'Не удалось связаться с сервером.',
+      type: 'error'
+    });
+  } finally {
+    window.clearTimeout(timeoutId);
+    setSendingStatus(false);
+  }
 };
 
   const updateBatchItem = (itemIndex, field, value) => {
