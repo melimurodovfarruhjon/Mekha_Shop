@@ -4,8 +4,34 @@ import { Calculator, ShoppingBag, RefreshCw, PlusCircle, Trash2, Home, Image as 
 // --- КОНФИГУРАЦИЯ БОТА И СЕРВЕРА ---
 const BACKEND_URL = "https://mekhaserver-production.up.railway.app"; // Ваша ссылка с Render
 
+const compressImageFile = (file, maxDimension = 1000, quality = 0.78) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onerror = () => reject(new Error('Не удалось прочитать фотографию'));
+  reader.onload = () => {
+    const image = new Image();
+    image.onerror = () => reject(new Error('Файл не является корректной фотографией'));
+    image.onload = () => {
+      const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        if (!blob) return reject(new Error('Не удалось уменьшить фотографию'));
+        const compressed = new File([blob], `${file.name.replace(/\.[^.]+$/, '') || 'product'}.jpg`, { type: 'image/jpeg' });
+        const resultReader = new FileReader();
+        resultReader.onerror = () => reject(new Error('Не удалось подготовить фотографию'));
+        resultReader.onload = () => resolve({ file: compressed, dataUrl: resultReader.result });
+        resultReader.readAsDataURL(blob);
+      }, 'image/jpeg', quality);
+    };
+    image.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
 // --- Компонент загрузки фото ---
-const ImageUploader = ({ onImageUpload, currentPreview, isDarkMode }) => {
+const ImageUploader = ({ onImageUpload, onImageProcessingChange, currentPreview, isDarkMode }) => {
   const [previewUrl, setPreviewUrl] = useState(currentPreview || null);
   const fileInputRef = useRef(null);
 
@@ -13,15 +39,19 @@ const ImageUploader = ({ onImageUpload, currentPreview, isDarkMode }) => {
     setPreviewUrl(currentPreview || null);
   }, [currentPreview]);
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
-      onImageUpload(file); 
-      const fileReader = new FileReader();
-      fileReader.onload = () => {
-        setPreviewUrl(fileReader.result);
-      };
-      fileReader.readAsDataURL(file);
+      onImageProcessingChange?.(true);
+      try {
+        const compressed = await compressImageFile(file);
+        onImageUpload(compressed.file, compressed.dataUrl);
+        setPreviewUrl(compressed.dataUrl);
+      } catch (error) {
+        console.error('Image compression failed:', error);
+      } finally {
+        onImageProcessingChange?.(false);
+      }
     }
   };
 
@@ -352,7 +382,7 @@ const handleTouchCancel = () => {
         id: product.id,
         legacyId: product.legacyId,
         title: product.title,
-        photo: product.photo || '',
+        photo: product.photo?.startsWith('/api/') ? `${BACKEND_URL}${product.photo}` : product.photo || '',
         quantity: Number(product.quantity || 0),
 
         totalWholesale: Number(product.totalWholesaleTjs || 0),
@@ -390,7 +420,13 @@ const handleTouchCancel = () => {
         throw new Error(data.error || 'Не удалось загрузить поставки');
       }
 
-      setPurchaseReports(data.batches);
+      setPurchaseReports(data.batches.map(batch => ({
+        ...batch,
+        items: batch.items.map(item => ({
+          ...item,
+          photo: item.photo?.startsWith('/api/') ? `${BACKEND_URL}${item.photo}` : item.photo || ''
+        }))
+      })));
     } catch (error) {
       console.error('Purchase reports load failed:', error);
       setModalAlert({
@@ -407,8 +443,8 @@ const handleTouchCancel = () => {
   loadProducts();
 
   const intervalId = setInterval(() => {
-    loadProducts();
-  }, 5000);
+    if (document.visibilityState === 'visible') loadProducts();
+  }, 60000);
 
   return () => clearInterval(intervalId);
 }, []);
@@ -638,6 +674,8 @@ useEffect(() => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [deliveryComment, setDeliveryComment] = useState('');
   const [sendingStatus, setSendingStatus] = useState(false);
+  const orderSendInFlight = useRef(false);
+  const orderRequestId = useRef(null);
 
   // Форма товара
   const [editingId, setEditingId] = useState(null);
@@ -650,6 +688,11 @@ useEffect(() => {
   const [prodSalePrice, setProdSalePrice] = useState('');
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [currentPhotoPreview, setCurrentPhotoPreview] = useState(null);
+  const [productSaving, setProductSaving] = useState(false);
+  const [productImageProcessing, setProductImageProcessing] = useState(false);
+  const productSaveInFlight = useRef(false);
+  const productCreateRequestId = useRef(null);
+  const productCreateFingerprint = useRef(null);
   const [isQuickAddMenuOpen, setIsQuickAddMenuOpen] = useState(false);
 
   
@@ -684,6 +727,8 @@ useEffect(() => {
   const [batchNotes, setBatchNotes] = useState(() => readBatchDraft()?.batchNotes || '');
   const [batchItems, setBatchItems] = useState(() => readBatchDraft()?.batchItems || []);
   const [batchSaving, setBatchSaving] = useState(false);
+  const batchRequestId = useRef(null);
+  const batchRequestFingerprint = useRef(null);
 
   // ПОШАГОВОЕ ОФОРМЛЕНИЕ ПОСТАВКИ
   const [batchStep, setBatchStep] = useState(() => readBatchDraft()?.batchStep || 1);
@@ -691,6 +736,7 @@ useEffect(() => {
   const [showBatchVariants, setShowBatchVariants] = useState(false);
   const [batchNewProductTitle, setBatchNewProductTitle] = useState('');
   const [batchNewProductPhoto, setBatchNewProductPhoto] = useState('');
+  const [batchPhotoProcessing, setBatchPhotoProcessing] = useState(false);
   const [showBatchProductCreation, setShowBatchProductCreation] = useState(false);
   const batchProductCreationLock = useRef(false);
 
@@ -735,7 +781,9 @@ useEffect(() => {
   const fetchRates = async () => {
     setLoading(true);
     try {
-      const res = await fetch('https://open.er-api.com/v6/latest/USD');
+      const res = await fetch('https://open.er-api.com/v6/latest/USD', {
+        signal: AbortSignal.timeout(10000)
+      });
       if (!res.ok) throw new Error('Не удалось получить курсы валют');
       const data = await res.json();
       if (data?.rates && Number(data.rates.CNY) > 0 && Number(data.rates.TJS) > 0) {
@@ -794,7 +842,7 @@ useEffect(() => {
 
   useEffect(() => {
     fetchRates();
-    const rateInterval = window.setInterval(fetchRates, 3000);
+    const rateInterval = window.setInterval(fetchRates, 15 * 60 * 1000);
     return () => window.clearInterval(rateInterval);
   }, []);
 
@@ -922,6 +970,7 @@ const handleFindClientAddress = async () => {
 
 const handleSendOrder = async (e) => {
   e.preventDefault();
+  if (orderSendInFlight.current) return;
   if (deliveryItems.length === 0) {
     setModalAlert({ title: 'Ошибка', message: 'Добавьте хотя бы один товар в заказ.', type: 'error' });
     return;
@@ -935,7 +984,9 @@ const handleSendOrder = async (e) => {
     setModalAlert({ title: 'Нужна геопозиция магазина', message: 'Нажмите «Включить геопозицию» и разрешите браузеру определить местоположение магазина.', type: 'info' });
     return;
   }
+  orderSendInFlight.current = true;
   setSendingStatus(true);
+  if (!orderRequestId.current) orderRequestId.current = crypto.randomUUID();
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), 35000);
   try {
@@ -943,8 +994,11 @@ const handleSendOrder = async (e) => {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
+        requestId: orderRequestId.current,
         courierName: 'ZudGo', clientPhone,
         clientAddress: clientAddress.trim(),
+        clientLatitude: clientCoordinates?.latitude ?? null,
+        clientLongitude: clientCoordinates?.longitude ?? null,
         storeLatitude: Number(storeCoordinates.latitude),
         storeLongitude: Number(storeCoordinates.longitude),
         comment: deliveryComment,
@@ -953,6 +1007,7 @@ const handleSendOrder = async (e) => {
     });
     const data = await response.json();
     if (response.status === 201 && data.success) {
+      orderRequestId.current = null;
       const newDelivery = {
         id: data.orderId, orderId: data.orderId, publicNumber: data.publicNumber,
         items: deliveryItems, courierName: 'ZudGo',
@@ -964,10 +1019,12 @@ const handleSendOrder = async (e) => {
       setDeliveries(prev => [newDelivery, ...prev]);
       setDeliveryItems([]); setClientPhone(''); setClientAddress(''); setDeliveryComment('');
       setModalAlert({
-        title: data.pushSent > 0 ? 'Заказ отправлен в ZudGo' : 'Заказ сохранён',
-        message: data.pushSent > 0
-          ? `Заказ №${data.publicNumber} сохранён и Push отправлен курьерскому устройству.`
-          : `Заказ №${data.publicNumber} сохранён на сервере. ${data.pushWarning || 'Push пока не доставлен; приложение курьера получит заказ при следующей синхронизации.'}`,
+        title: data.alreadySaved ? 'Заказ уже сохранён' : data.pushSent > 0 ? 'Заказ отправлен в ZudGo' : 'Заказ сохранён',
+        message: data.alreadySaved
+          ? `Заказ №${data.publicNumber} уже был записан. Повторный заказ не создавался.`
+          : data.pushSent > 0
+          ? `Заказ №${data.publicNumber} сохранён и Push отправлен курьерскому устройству.${data.coordinateWarning ? ` ${data.coordinateWarning}` : ''}`
+          : `Заказ №${data.publicNumber} сохранён на сервере. ${data.pushWarning || 'Push пока не доставлен; приложение курьера получит заказ при следующей синхронизации.'}${data.coordinateWarning ? ` ${data.coordinateWarning}` : ''}`,
         type: data.pushSent > 0 ? 'success' : 'info'
       });
     } else {
@@ -984,6 +1041,7 @@ const handleSendOrder = async (e) => {
     });
   } finally {
     window.clearTimeout(timeoutId);
+    orderSendInFlight.current = false;
     setSendingStatus(false);
   }
 };
@@ -1180,8 +1238,12 @@ const handleSavePurchaseBatch = async (e) => {
       return;
     }
 
+    const productUuid = typeof catalogProduct?.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(catalogProduct.id)
+      ? catalogProduct.id
+      : null;
     payloadItems.push({
-      legacyId: String(item.productId),
+      productId: productUuid,
+      legacyId: catalogProduct?.legacyId ?? (productUuid ? null : String(item.productId)),
       title: product.title,
       photo: product.photo,
       quantity,
@@ -1205,6 +1267,16 @@ const handleSavePurchaseBatch = async (e) => {
   }
 
   setBatchSaving(true);
+  const batchNotesPayload = batchName
+    ? `${batchName}${batchNotes ? `\n${batchNotes}` : ''}`
+    : batchNotes;
+  const requestFingerprint = JSON.stringify({ notes: batchNotesPayload, items: payloadItems });
+  if (!batchRequestId.current || batchRequestFingerprint.current !== requestFingerprint) {
+    batchRequestId.current = crypto.randomUUID();
+    batchRequestFingerprint.current = requestFingerprint;
+  }
+  const batchController = new AbortController();
+  const batchTimeoutId = window.setTimeout(() => batchController.abort(), 45000);
 
   try {
     const response = await fetch(
@@ -1214,10 +1286,10 @@ const handleSavePurchaseBatch = async (e) => {
         headers: {
           'Content-Type': 'application/json'
         },
+        signal: batchController.signal,
         body: JSON.stringify({
-          notes: batchName
-            ? `${batchName}${batchNotes ? `\n${batchNotes}` : ''}`
-            : batchNotes,
+          requestId: batchRequestId.current,
+          notes: batchNotesPayload,
           items: payloadItems
         })
       }
@@ -1238,6 +1310,8 @@ const handleSavePurchaseBatch = async (e) => {
         data.error || `Не удалось сохранить партию (HTTP ${response.status})`
       );
     }
+    batchRequestId.current = null;
+    batchRequestFingerprint.current = null;
     loadProducts().catch(error => console.error('Catalog refresh failed:', error));
     localStorage.removeItem(BATCH_DRAFT_KEY);
     setBatchItems([]);
@@ -1257,10 +1331,13 @@ const handleSavePurchaseBatch = async (e) => {
     console.error('Purchase batch save failed:', error);
     setModalAlert({
       title: 'Поставка не сохранена',
-      message: error.message || 'Не удалось связаться с сервером. Черновик сохранён — можно повторить попытку.',
+      message: error.name === 'AbortError'
+        ? 'Сервер не ответил за 45 секунд. Черновик не очищен; повторная отправка не создаст дубликат этой поставки.'
+        : error.message || 'Не удалось связаться с сервером. Черновик сохранён — можно повторить попытку.',
       type: 'error'
     });
   } finally {
+    window.clearTimeout(batchTimeoutId);
     setBatchSaving(false);
   }
 };
@@ -1333,52 +1410,62 @@ const handleSavePurchaseBatch = async (e) => {
     return;
   }
 
+  if (productSaveInFlight.current) return;
+  productSaveInFlight.current = true;
+  setProductSaving(true);
   const currentEditingId = editingId;
+  const createFingerprint = JSON.stringify({ title: cleanTitle, photo: currentPhotoPreview || '' });
+  if (!currentEditingId && (!productCreateRequestId.current || productCreateFingerprint.current !== createFingerprint)) {
+    productCreateRequestId.current = crypto.randomUUID();
+    productCreateFingerprint.current = createFingerprint;
+  }
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 30000);
 
   try {
-    if (currentEditingId) {
-      // Обновляем существующий товар в PostgreSQL.
-      const response = await fetch(
-        `${BACKEND_URL}/api/products/${encodeURIComponent(currentEditingId)}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            title: cleanTitle,
-            photo: currentPhotoPreview || '',
+    const response = await fetch(
+      currentEditingId
+        ? `${BACKEND_URL}/api/products/${encodeURIComponent(currentEditingId)}`
+        : `${BACKEND_URL}/api/products`,
+      {
+        method: currentEditingId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          ...(!currentEditingId ? { id: productCreateRequestId.current } : {}),
+          title: cleanTitle,
+          photo: currentEditingId && !selectedImageFile ? null : currentPhotoPreview || '',
+          ...(currentEditingId ? {
             totalWholesaleTjs: Number(prodWholesale || 0),
             cargoCostTjs: Number(prodCargoCost || 0),
             salePriceTjs: Number(prodSalePrice || 0)
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Не удалось сохранить изменения');
+          } : {})
+        })
       }
+    );
 
-      // Получаем обновлённый каталог с сервера.
-      await loadProducts();
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || `Сервер не сохранил товар (HTTP ${response.status})`);
+    }
+    if (!currentEditingId) {
+      productCreateRequestId.current = null;
+      productCreateFingerprint.current = null;
+    }
 
-    } else {
-      // Новую модель пока создаём локально.
-      const newProduct = {
-        id: Date.now(),
-        title: cleanTitle,
-        photo: currentPhotoPreview ||
-          'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=400',
+    const catalogReloaded = await loadProducts();
+    if (!catalogReloaded && !currentEditingId && data.product) {
+      setProducts(prev => [{
+        id: data.product.id,
+        title: data.product.title,
+        photo: data.product.photo?.startsWith('/api/') ? `${BACKEND_URL}${data.product.photo}` : data.product.photo || '',
         quantity: 0,
         totalWholesale: 0,
-        wholesaleCurrency: 'CNY',
+        wholesaleCurrency: 'TJS',
         cargoCost: 0,
-        cargoCurrency: 'USD'
-      };
-
-      setProducts(prev => [newProduct, ...prev]);
+        cargoCurrency: 'TJS',
+        salePriceTjs: 0
+      }, ...prev]);
     }
 
     setEditingId(null);
@@ -1406,9 +1493,15 @@ const handleSavePurchaseBatch = async (e) => {
 
     setModalAlert({
       title: 'Ошибка сохранения',
-      message: error.message || 'Не удалось связаться с сервером.',
+      message: error.name === 'AbortError'
+        ? 'Сервер не ответил за 30 секунд. Проверьте каталог перед повторным нажатием: карточка могла сохраниться.'
+        : error.message || 'Не удалось связаться с сервером.',
       type: 'error'
     });
+  } finally {
+    window.clearTimeout(timeoutId);
+    productSaveInFlight.current = false;
+    setProductSaving(false);
   }
 };
 
@@ -1943,6 +2036,7 @@ const handleSavePurchaseBatch = async (e) => {
                         <img
                           src={p.photo}
                           alt={p.title}
+                          loading="lazy"
                           className="w-full h-full object-contain p-1"
                         />
                       </button>
@@ -3126,12 +3220,10 @@ const handleSavePurchaseBatch = async (e) => {
           </label>
 
           <ImageUploader
-            onImageUpload={(file) => {
+            onImageProcessingChange={setProductImageProcessing}
+            onImageUpload={(file, preview) => {
               setSelectedImageFile(file);
-
-              const reader = new FileReader();
-              reader.onload = () => setCurrentPhotoPreview(reader.result);
-              reader.readAsDataURL(file);
+              setCurrentPhotoPreview(preview);
             }}
             currentPreview={currentPhotoPreview}
             isDarkMode={isDarkMode}
@@ -3184,11 +3276,11 @@ const handleSavePurchaseBatch = async (e) => {
 
         <button
           type="submit"
-          disabled={!prodTitle.trim()}
+          disabled={!prodTitle.trim() || productSaving || productImageProcessing}
           className="w-full bg-[#58111A] text-white py-3.5 rounded-xl text-sm font-bold active:scale-95 transition-transform disabled:opacity-40 flex items-center justify-center gap-2"
         >
-          <Check size={16} />
-          {editingId ? 'Сохранить изменения' : 'Создать карточку'}
+          {productSaving ? <RefreshCw size={16} className="animate-spin" /> : <Check size={16} />}
+          {productSaving ? 'Сохраняем…' : productImageProcessing ? 'Подготавливаем фото…' : editingId ? 'Сохранить изменения' : 'Создать карточку'}
         </button>
 
         <button
@@ -3489,7 +3581,7 @@ const handleSavePurchaseBatch = async (e) => {
       type="file"
       accept="image/*"
       className="hidden"
-      onChange={e => {
+      onChange={async e => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -3502,11 +3594,15 @@ const handleSavePurchaseBatch = async (e) => {
           return;
         }
 
-        const reader = new FileReader();
-        reader.onload = () => {
-          setBatchNewProductPhoto(reader.result);
-        };
-        reader.readAsDataURL(file);
+        setBatchPhotoProcessing(true);
+        try {
+          const compressed = await compressImageFile(file);
+          setBatchNewProductPhoto(compressed.dataUrl);
+        } catch (error) {
+          setModalAlert({ title: 'Ошибка фотографии', message: error.message, type: 'error' });
+        } finally {
+          setBatchPhotoProcessing(false);
+        }
       }}
     />
 
@@ -3577,7 +3673,7 @@ const handleSavePurchaseBatch = async (e) => {
       <button
         type="button"
         disabled={showBatchProductCreation
-          ? !batchNewProductTitle.trim()
+          ? !batchNewProductTitle.trim() || batchPhotoProcessing
           : !batchItems.some(item => item.productId)}
         onClick={() => {
           if (showBatchProductCreation) {
