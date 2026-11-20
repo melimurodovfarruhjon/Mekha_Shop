@@ -975,8 +975,8 @@ const handleSendOrder = async (e) => {
     setModalAlert({ title: 'Ошибка', message: 'Добавьте хотя бы один товар в заказ.', type: 'error' });
     return;
   }
-  if (clientAddress.trim().length < 5) {
-    setModalAlert({ title: 'Укажите адрес клиента', message: 'Введите улицу, номер дома и ориентир.', type: 'error' });
+  if (clientAddress.trim().length < 2) {
+    setModalAlert({ title: 'Укажите адрес клиента', message: 'Введите название места, улицу, дом или ориентир.', type: 'error' });
     return;
   }
   if (!storeCoordinates || !Number.isFinite(Number(storeCoordinates.latitude)) || !Number.isFinite(Number(storeCoordinates.longitude))) {
