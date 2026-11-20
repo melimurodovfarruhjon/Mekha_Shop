@@ -979,10 +979,6 @@ const handleSendOrder = async (e) => {
     setModalAlert({ title: 'Укажите адрес клиента', message: 'Введите улицу, номер дома и ориентир.', type: 'error' });
     return;
   }
-  if (!clientCoordinates || !Number.isFinite(Number(clientCoordinates.latitude)) || !Number.isFinite(Number(clientCoordinates.longitude))) {
-    setModalAlert({ title: 'Не выбрана точка клиента', message: 'Нажмите «Найти адрес на карте» и выберите правильную точку из результатов.', type: 'error' });
-    return;
-  }
   if (!storeCoordinates || !Number.isFinite(Number(storeCoordinates.latitude)) || !Number.isFinite(Number(storeCoordinates.longitude))) {
     setLocationPromptOpen(true);
     setModalAlert({ title: 'Нужна геопозиция магазина', message: 'Нажмите «Включить геопозицию» и разрешите браузеру определить местоположение магазина.', type: 'info' });
@@ -1001,8 +997,6 @@ const handleSendOrder = async (e) => {
         requestId: orderRequestId.current,
         courierName: 'ZudGo', clientPhone,
         clientAddress: clientAddress.trim(),
-        clientLatitude: clientCoordinates?.latitude ?? null,
-        clientLongitude: clientCoordinates?.longitude ?? null,
         storeLatitude: Number(storeCoordinates.latitude),
         storeLongitude: Number(storeCoordinates.longitude),
         comment: deliveryComment,
@@ -2391,48 +2385,11 @@ const handleSavePurchaseBatch = async (e) => {
                 <input
                   type="text"
                   value={clientAddress}
-                  onChange={(e) => { setClientAddress(e.target.value); setClientCoordinates(null); setAddressSuggestions([]); }}
-                  placeholder="Адрес клиента: улица, дом, ориентир"
+                  onChange={(e) => setClientAddress(e.target.value)}
+                  placeholder="Адрес клиента: улица, дом или ориентир"
                   className={`w-full pl-9 pr-4 p-3 border rounded-xl text-xs outline-none focus:border-[#58111A] ${isDarkMode ? 'bg-[#3D4754] border-gray-700 text-white' : 'bg-gray-50 border-gray-200 text-gray-900'}`}
                 />
                 <MapPin size={15} className="absolute left-3 top-3.5 text-gray-400" />
-              </div>
-              <button
-                type="button"
-                onClick={handleFindClientAddress}
-                disabled={addressSearchLoading || clientAddress.trim().length < 5}
-                className="w-full mt-2 rounded-xl border border-[#58111A] text-[#58111A] dark:text-rose-200 dark:border-rose-300 py-2.5 text-xs font-bold disabled:opacity-50"
-              >
-                {addressSearchLoading ? 'Поиск адреса...' : 'Найти адрес на карте'}
-              </button>
-              {addressSuggestions.length > 0 && (
-                <div className={`mt-2 rounded-xl border overflow-hidden ${isDarkMode ? 'border-gray-700 bg-[#252D38]' : 'border-gray-200 bg-white'}`}>
-                  {addressSuggestions.map((suggestion, index) => (
-                    <button
-                      key={`${suggestion.latitude}-${suggestion.longitude}-${index}`}
-                      type="button"
-                      onClick={() => {
-                        setClientCoordinates({
-                          latitude: Number(suggestion.latitude),
-                          longitude: Number(suggestion.longitude)
-                        });
-                        setClientAddress(suggestion.label || clientAddress);
-                        setAddressSuggestions([]);
-                      }}
-                      className={`w-full text-left px-3 py-3 text-xs border-b last:border-b-0 ${isDarkMode ? 'border-gray-700 text-white hover:bg-[#343D49]' : 'border-gray-100 text-gray-800 hover:bg-gray-50'}`}
-                    >
-                      <span className="block font-semibold">{suggestion.label || 'Найденная точка'}</span>
-                      <span className="block mt-1 text-[10px] opacity-60">
-                        {Number(suggestion.latitude).toFixed(5)}, {Number(suggestion.longitude).toFixed(5)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className={`mt-2 text-[11px] ${clientCoordinates ? 'text-emerald-600' : 'text-amber-600'}`}>
-                {clientCoordinates
-                  ? 'Точка клиента выбрана и будет передана курьеру.'
-                  : 'Сначала найдите адрес и выберите точку из списка.'}
               </div>
 
               <div className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${storeCoordinates ? (isDarkMode ? 'bg-emerald-950/30 border-emerald-900 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800') : (isDarkMode ? 'bg-amber-950/20 border-amber-900 text-amber-200' : 'bg-amber-50 border-amber-200 text-amber-800')}`}>
